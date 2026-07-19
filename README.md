@@ -52,9 +52,8 @@ bash ~/final-setup.sh
 ├── Project/            # 空 (受講者が個人演習に使う)
 ├── TeamProject/        # 空 (グループワークに使う)
 ├── final-setup.sh      # 当日1度だけ叩く。実行後に自動削除
-├── Desktop/
-│   └── final-setup.sh  # 同上のショートカット
-└── CSSC2026/downloads/ # standard-env-setup.sh の作業ディレクトリ (消してもOK)
+└── Desktop/
+    └── final-setup.sh  # 同上のショートカット
 ```
 
 `final-setup.sh` 実行後:

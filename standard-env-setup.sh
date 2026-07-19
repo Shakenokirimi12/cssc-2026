@@ -5,7 +5,7 @@
 # 何をするか:
 #   1. Aizu ミラー (https://web-int.u-aizu.ac.jp/~nisidate/CSSC/) から
 #      Demo/{shooting,rhythmGame,notesMaker}/ と schoolnote.pdf を取得し
-#      $HOME 直下に配置
+#      $HOME/Demo/ に直接展開
 #   2. $HOME/Project, $HOME/TeamProject を作成
 #   3. パーミッションを整える
 #   4. $HOME/final-setup.sh (受講者が当日叩くやつ) を配置
@@ -14,7 +14,7 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/shakenokirimi12/cssc-2026/main/standard-env-setup.sh | bash
 #
-# 冪等 (再実行しても壊しません)。
+# 冪等 (再実行しても壊しません)。中間ファイルは一切残しません。
 # ============================================================
 
 set -Eeuo pipefail
@@ -23,7 +23,10 @@ set -Eeuo pipefail
 
 MIRROR="${CSSC_MIRROR_URL:-https://web-int.u-aizu.ac.jp/~nisidate/CSSC}"
 REPO_RAW="${CSSC_REPO_RAW:-https://raw.githubusercontent.com/shakenokirimi12/cssc-2026/main}"
-DOWNLOADS_DIR="${DOWNLOADS_DIR:-$HOME/CSSC2026/downloads}"
+
+# 一時作業ディレクトリ (終了時に自動削除)
+WORK="$(mktemp -d -t cssc-XXXXXX)"
+trap 'rm -rf "$WORK"' EXIT
 
 # ---- ログ --------------------------------------------------------
 
@@ -34,68 +37,57 @@ die()  { printf '%b[FATAL %s]%b %s\n' "$C_ERR" "$(date +%H:%M:%S)" "$C_END" "$*"
 
 # ---- 事前チェック ------------------------------------------------
 
-for cmd in wget curl unzip rsync; do
+for cmd in wget curl unzip; do
   command -v "$cmd" >/dev/null 2>&1 || die "$cmd が PATH に無い"
 done
 
-mkdir -p "$DOWNLOADS_DIR"
-
-# ---- 1. Aizu ミラーから Demo と schoolnote 取得 -----------------
+# ---- 1. Demo と schoolnote を $HOME/Demo/ に直接展開 ------------
 
 DEMO_ZIPS=(shooting.zip rhythmGame.zip notesMaker.zip)
 SCHOOLNOTE_REMOTE="text/2026_jsgame_schoolnote.pdf"
 
-mkdir -p "$DOWNLOADS_DIR/Demo"
-
-for zip in "${DEMO_ZIPS[@]}"; do
-  local_zip="$DOWNLOADS_DIR/$zip"
-  subdir="${zip%.zip}"
-  target="$DOWNLOADS_DIR/Demo/$subdir"
-
-  if [[ ! -s "$local_zip" ]]; then
-    log "取得: $MIRROR/demo/$zip"
-    if ! wget -q --show-progress -O "$local_zip" "$MIRROR/demo/$zip"; then
-      warn "$zip の取得に失敗、スキップ"
-      rm -f "$local_zip"
-      continue
-    fi
-  fi
-
-  if [[ ! -d "$target" || -z "$(ls -A "$target" 2>/dev/null)" ]]; then
-    log "展開: Demo/$subdir/"
-    rm -rf "$target"
-    mkdir -p "$target"
-    top=$(unzip -l "$local_zip" | awk 'NR>3 && $NF!~/\/$/ {print $NF; exit}' || true)
-    if [[ "$top" == "$subdir/"* ]]; then
-      unzip -q -o "$local_zip" -d "$DOWNLOADS_DIR/Demo/"
-    else
-      unzip -q -o "$local_zip" -d "$target"
-    fi
-  fi
-done
-
-[[ -d "$DOWNLOADS_DIR/Demo/shooting" && -n "$(ls -A "$DOWNLOADS_DIR/Demo/shooting" 2>/dev/null)" ]] \
-  || die "Demo/shooting/ が用意できず。$MIRROR/demo/shooting.zip を手動確認してください"
-
-if [[ ! -f "$DOWNLOADS_DIR/schoolnote.pdf" ]]; then
-  log "schoolnote.pdf を取得"
-  wget -q --show-progress -O "$DOWNLOADS_DIR/schoolnote.pdf" "$MIRROR/$SCHOOLNOTE_REMOTE" \
-    || { rm -f "$DOWNLOADS_DIR/schoolnote.pdf"; warn "schoolnote.pdf 取得失敗 (必須ではない)"; }
-fi
-
-# ---- 2. ホーム構造 -----------------------------------------------
-
 log "ホームディレクトリを整備 (Demo/Project/TeamProject)"
 mkdir -p "$HOME/Demo" "$HOME/Project" "$HOME/TeamProject"
 
-log "Demo/ を配置"
-rsync -a --delete "$DOWNLOADS_DIR/Demo/" "$HOME/Demo/"
+for zip in "${DEMO_ZIPS[@]}"; do
+  subdir="${zip%.zip}"
+  target="$HOME/Demo/$subdir"
 
-if [[ -f "$DOWNLOADS_DIR/schoolnote.pdf" ]]; then
-  cp -u "$DOWNLOADS_DIR/schoolnote.pdf" "$HOME/Demo/schoolnote.pdf"
+  if [[ -d "$target" && -n "$(ls -A "$target" 2>/dev/null)" ]]; then
+    log "既に配置済: Demo/$subdir/"
+    continue
+  fi
+
+  local_zip="$WORK/$zip"
+  log "取得: $MIRROR/demo/$zip"
+  if ! wget -q --show-progress -O "$local_zip" "$MIRROR/demo/$zip"; then
+    warn "$zip の取得に失敗、スキップ"
+    rm -f "$local_zip"
+    continue
+  fi
+
+  log "展開: ~/Demo/$subdir/"
+  rm -rf "$target"
+  mkdir -p "$target"
+  top=$(unzip -l "$local_zip" | awk 'NR>3 && $NF!~/\/$/ {print $NF; exit}' || true)
+  if [[ "$top" == "$subdir/"* ]]; then
+    unzip -q -o "$local_zip" -d "$HOME/Demo/"
+  else
+    unzip -q -o "$local_zip" -d "$target"
+  fi
+done
+
+[[ -d "$HOME/Demo/shooting" && -n "$(ls -A "$HOME/Demo/shooting" 2>/dev/null)" ]] \
+  || die "Demo/shooting/ が用意できず。$MIRROR/demo/shooting.zip を手動確認してください"
+
+# schoolnote.pdf は Demo/ 直下に置く
+if [[ ! -f "$HOME/Demo/schoolnote.pdf" ]]; then
+  log "schoolnote.pdf を取得 -> ~/Demo/schoolnote.pdf"
+  wget -q --show-progress -O "$HOME/Demo/schoolnote.pdf" "$MIRROR/$SCHOOLNOTE_REMOTE" \
+    || { rm -f "$HOME/Demo/schoolnote.pdf"; warn "schoolnote.pdf 取得失敗 (必須ではない)"; }
 fi
 
-# ---- 3. パーミッション ------------------------------------------
+# ---- 2. パーミッション ------------------------------------------
 
 log "権限: HOME=755, 作業ディレクトリは group+other 読み取り可 (write は無し)"
 # 同時編集は StageZero 拡張が担うので、ファイルシステムに write 権限を
@@ -103,7 +95,7 @@ log "権限: HOME=755, 作業ディレクトリは group+other 読み取り可 (
 chmod 755 "$HOME"
 chmod -R go+rX "$HOME/Project" "$HOME/Demo" "$HOME/TeamProject"
 
-# ---- 4. final-setup.sh を配置 -----------------------------
+# ---- 3. final-setup.sh を配置 -----------------------------------
 
 log "$HOME/final-setup.sh (受講者が当日叩くやつ) を配置"
 if ! curl -fsSL "$REPO_RAW/final-setup.sh" -o "$HOME/final-setup.sh"; then
@@ -119,7 +111,7 @@ fi
 
 # ---- 完了 --------------------------------------------------------
 
-log "標準環境の準備完了"
+log "標準環境の準備完了 (中間ファイルは削除済み)"
 cat <<MSG
 
     次のステップ:
