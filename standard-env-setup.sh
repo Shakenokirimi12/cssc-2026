@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+# ============================================================
+# CSSC2026 標準環境セットアップ (java51 で1度だけ実行)
+#
+# 何をするか:
+#   1. Aizu ミラー (https://web-int.u-aizu.ac.jp/~nisidate/CSSC/) から
+#      Demo/{shooting,rhythmGame,notesMaker}/ と schoolnote.pdf を取得し
+#      $HOME 直下に配置
+#   2. $HOME/Project, $HOME/TeamProject を作成
+#   3. パーミッションを整える
+#   4. $HOME/final-setup.sh (受講者が当日叩くやつ) を配置
+#
+# 使い方 (java51 にログインして):
+#
+#   curl -fsSL https://raw.githubusercontent.com/shakenokirimi12/cssc-2026/main/standard-env-setup.sh | bash
+#
+# 冪等 (再実行しても壊しません)。
+# ============================================================
+
+set -Eeuo pipefail
+
+# ---- 設定 --------------------------------------------------------
+
+MIRROR="${CSSC_MIRROR_URL:-https://web-int.u-aizu.ac.jp/~nisidate/CSSC}"
+REPO_RAW="${CSSC_REPO_RAW:-https://raw.githubusercontent.com/shakenokirimi12/cssc-2026/main}"
+DOWNLOADS_DIR="${DOWNLOADS_DIR:-$HOME/CSSC2026/downloads}"
+
+# ---- ログ --------------------------------------------------------
+
+C_INF='\033[1;36m'; C_WRN='\033[1;33m'; C_ERR='\033[1;31m'; C_END='\033[0m'
+log()  { printf '%b[%s]%b %s\n' "$C_INF" "$(date +%H:%M:%S)" "$C_END" "$*"; }
+warn() { printf '%b[WARN %s]%b %s\n' "$C_WRN" "$(date +%H:%M:%S)" "$C_END" "$*" >&2; }
+die()  { printf '%b[FATAL %s]%b %s\n' "$C_ERR" "$(date +%H:%M:%S)" "$C_END" "$*" >&2; exit 1; }
+
+# ---- 事前チェック ------------------------------------------------
+
+for cmd in wget curl unzip rsync; do
+  command -v "$cmd" >/dev/null 2>&1 || die "$cmd が PATH に無い"
+done
+
+mkdir -p "$DOWNLOADS_DIR"
+
+# ---- 1. Aizu ミラーから Demo と schoolnote 取得 -----------------
+
+DEMO_ZIPS=(shooting.zip rhythmGame.zip notesMaker.zip)
+SCHOOLNOTE_REMOTE="text/2026_jsgame_schoolnote.pdf"
+
+mkdir -p "$DOWNLOADS_DIR/Demo"
+
+for zip in "${DEMO_ZIPS[@]}"; do
+  local_zip="$DOWNLOADS_DIR/$zip"
+  subdir="${zip%.zip}"
+  target="$DOWNLOADS_DIR/Demo/$subdir"
+
+  if [[ ! -s "$local_zip" ]]; then
+    log "取得: $MIRROR/demo/$zip"
+    if ! wget -q --show-progress -O "$local_zip" "$MIRROR/demo/$zip"; then
+      warn "$zip の取得に失敗、スキップ"
+      rm -f "$local_zip"
+      continue
+    fi
+  fi
+
+  if [[ ! -d "$target" || -z "$(ls -A "$target" 2>/dev/null)" ]]; then
+    log "展開: Demo/$subdir/"
+    rm -rf "$target"
+    mkdir -p "$target"
+    top=$(unzip -l "$local_zip" | awk 'NR>3 && $NF!~/\/$/ {print $NF; exit}' || true)
+    if [[ "$top" == "$subdir/"* ]]; then
+      unzip -q -o "$local_zip" -d "$DOWNLOADS_DIR/Demo/"
+    else
+      unzip -q -o "$local_zip" -d "$target"
+    fi
+  fi
+done
+
+[[ -d "$DOWNLOADS_DIR/Demo/shooting" && -n "$(ls -A "$DOWNLOADS_DIR/Demo/shooting" 2>/dev/null)" ]] \
+  || die "Demo/shooting/ が用意できず。$MIRROR/demo/shooting.zip を手動確認してください"
+
+if [[ ! -f "$DOWNLOADS_DIR/schoolnote.pdf" ]]; then
+  log "schoolnote.pdf を取得"
+  wget -q --show-progress -O "$DOWNLOADS_DIR/schoolnote.pdf" "$MIRROR/$SCHOOLNOTE_REMOTE" \
+    || { rm -f "$DOWNLOADS_DIR/schoolnote.pdf"; warn "schoolnote.pdf 取得失敗 (必須ではない)"; }
+fi
+
+# ---- 2. ホーム構造 -----------------------------------------------
+
+log "ホームディレクトリを整備 (Demo/Project/TeamProject)"
+mkdir -p "$HOME/Demo" "$HOME/Project" "$HOME/TeamProject"
+
+log "Demo/ を配置"
+rsync -a --delete "$DOWNLOADS_DIR/Demo/" "$HOME/Demo/"
+
+if [[ -f "$DOWNLOADS_DIR/schoolnote.pdf" ]]; then
+  cp -u "$DOWNLOADS_DIR/schoolnote.pdf" "$HOME/Demo/schoolnote.pdf"
+fi
+
+# ---- 3. パーミッション ------------------------------------------
+
+log "権限: HOME=755, Demo/Project=world readable, TeamProject=完全共有"
+chmod 755 "$HOME"
+chmod -R go+rX "$HOME/Project" "$HOME/Demo"
+chmod -R g=u,o=u "$HOME/TeamProject"
+
+# ---- 4. final-setup.sh を配置 -----------------------------
+
+log "$HOME/final-setup.sh (受講者が当日叩くやつ) を配置"
+if ! curl -fsSL "$REPO_RAW/final-setup.sh" -o "$HOME/final-setup.sh"; then
+  die "final-setup.sh の取得に失敗。$REPO_RAW にアクセス可能か確認してください"
+fi
+chmod +x "$HOME/final-setup.sh"
+
+# デスクトップに置いておくと初日の指導が楽 (存在するときだけ)
+if [[ -d "$HOME/Desktop" ]]; then
+  cp -u "$HOME/final-setup.sh" "$HOME/Desktop/final-setup.sh"
+  chmod +x "$HOME/Desktop/final-setup.sh"
+fi
+
+# ---- 完了 --------------------------------------------------------
+
+log "標準環境の準備完了"
+cat <<MSG
+
+    次のステップ:
+    1. $HOME/final-setup.sh を試しに実行して StageZero が入るか確認
+    2. 問題なければ企画係に「$(whoami) の環境を java1-50 に展開してください」メール
+
+    受講生は当日 $HOME/final-setup.sh をダブルクリックまたはターミナルで
+      bash ~/final-setup.sh
+    を実行するとインストールが走ります。
+MSG
