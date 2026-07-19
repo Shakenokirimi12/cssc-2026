@@ -80,11 +80,11 @@ done
 [[ -d "$HOME/Demo/shooting" && -n "$(ls -A "$HOME/Demo/shooting" 2>/dev/null)" ]] \
   || die "Demo/shooting/ が用意できず。$MIRROR/demo/shooting.zip を手動確認してください"
 
-# schoolnote.pdf は Demo/ 直下に置く
-if [[ ! -f "$HOME/Demo/schoolnote.pdf" ]]; then
-  log "schoolnote.pdf を取得 -> ~/Demo/schoolnote.pdf"
-  wget -q --show-progress -O "$HOME/Demo/schoolnote.pdf" "$MIRROR/$SCHOOLNOTE_REMOTE" \
-    || { rm -f "$HOME/Demo/schoolnote.pdf"; warn "schoolnote.pdf 取得失敗 (必須ではない)"; }
+# schoolnote.pdf は $HOME 直下に置く (受講生が最初に開くので目に付く位置)
+if [[ ! -f "$HOME/schoolnote.pdf" ]]; then
+  log "schoolnote.pdf を取得 -> ~/schoolnote.pdf"
+  wget -q --show-progress -O "$HOME/schoolnote.pdf" "$MIRROR/$SCHOOLNOTE_REMOTE" \
+    || { rm -f "$HOME/schoolnote.pdf"; warn "schoolnote.pdf 取得失敗 (必須ではない)"; }
 fi
 
 # ---- 2. パーミッション ------------------------------------------
@@ -102,12 +102,6 @@ if ! curl -fsSL "$REPO_RAW/final-setup.sh" -o "$HOME/final-setup.sh"; then
   die "final-setup.sh の取得に失敗。$REPO_RAW にアクセス可能か確認してください"
 fi
 chmod +x "$HOME/final-setup.sh"
-
-# デスクトップに置いておくと初日の指導が楽 (存在するときだけ)
-if [[ -d "$HOME/Desktop" ]]; then
-  cp -u "$HOME/final-setup.sh" "$HOME/Desktop/final-setup.sh"
-  chmod +x "$HOME/Desktop/final-setup.sh"
-fi
 
 # ---- 完了 --------------------------------------------------------
 

@@ -69,10 +69,10 @@ rm -f "$VSIX_TMP"
 
 # ---- 4. インストーラ自身を削除 ----------------------------------
 
-# 「もう二度目は無い」ので、$HOME 直下とデスクトップの final-setup.sh を消す。
+# 「もう二度目は無い」ので $HOME/final-setup.sh を消す。
 # ここまで来たら成功しているので self-delete で片付ける。
 log "セットアップ完了。final-setup.sh を削除します"
-rm -f "$HOME/final-setup.sh" "$HOME/Desktop/final-setup.sh"
+rm -f "$HOME/final-setup.sh"
 
 # ---- 完了 --------------------------------------------------------
 

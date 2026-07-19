@@ -44,27 +44,25 @@ bash ~/final-setup.sh
 
 ```
 ~/
+├── schoolnote.pdf      # 受講生が最初に開く PDF
 ├── Demo/
 │   ├── shooting/
 │   ├── rhythmGame/
-│   ├── notesMaker/
-│   └── schoolnote.pdf
+│   └── notesMaker/
 ├── Project/            # 空 (受講者が個人演習に使う)
 ├── TeamProject/        # 空 (グループワークに使う)
-├── final-setup.sh      # 当日1度だけ叩く。実行後に自動削除
-└── Desktop/
-    └── final-setup.sh  # 同上のショートカット
+└── final-setup.sh      # 当日1度だけ叩く。実行後に自動削除
 ```
 
 `final-setup.sh` 実行後:
 
 ```
 ~/
+├── schoolnote.pdf
 ├── Demo/
 │   ├── shooting/
 │   ├── rhythmGame/
 │   ├── notesMaker/
-│   ├── schoolnote.pdf
 │   └── cssc-2026/      # このリポジトリの clone
 ├── Project/
 └── TeamProject/
