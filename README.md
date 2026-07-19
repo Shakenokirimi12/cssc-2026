@@ -28,10 +28,12 @@ curl -fsSL https://raw.githubusercontent.com/shakenokirimi12/cssc-2026/main/stan
 対象: 受講者本人の $HOME。標準環境コピー直後の初回セットアップ。
 
 やること:
-1. このリポジトリを `~/Demo/cssc-2026/` に `git clone` (次回以降は `git pull`)
+1. このリポジトリを **`~/Demo/` 直下に取り込み** (init + fetch + checkout — 既存の
+   shooting/rhythmGame/notesMaker/ を壊さずに README や本スクリプトが並ぶ)
+   次回以降は `git pull` で更新
 2. 最新の StageZero .vsix を [zero.shakenokiri.me](https://zero.shakenokiri.me/stagezero.vsix) から DL
 3. VS Code に StageZero をインストール
-4. 完了したら `~/final-setup.sh` と `~/Desktop/final-setup.sh` を **自分自身で削除**
+4. 完了したら `~/final-setup.sh` を **自分自身で削除**
 
 ```bash
 bash ~/final-setup.sh
@@ -59,11 +61,14 @@ bash ~/final-setup.sh
 ```
 ~/
 ├── schoolnote.pdf
-├── Demo/
-│   ├── shooting/
+├── Demo/               # ← ここが cssc-2026 リポジトリのワーキングツリーになる
+│   ├── shooting/       #    (元の Demo コンテンツは untracked のまま残る)
 │   ├── rhythmGame/
 │   ├── notesMaker/
-│   └── cssc-2026/      # このリポジトリの clone
+│   ├── README.md       #    ← 以下 3 つが repo から降ってくる
+│   ├── standard-env-setup.sh
+│   ├── final-setup.sh
+│   └── .git/
 ├── Project/
 └── TeamProject/
 ```

@@ -20,7 +20,7 @@ set -Eeuo pipefail
 # ---- 設定 --------------------------------------------------------
 
 REPO_URL="${CSSC_REPO_URL:-https://github.com/shakenokirimi12/cssc-2026.git}"
-REPO_DIR="${CSSC_REPO_DIR:-$HOME/Demo/cssc-2026}"
+REPO_DIR="${CSSC_REPO_DIR:-$HOME/Demo}"
 VSIX_URL="${STAGEZERO_VSIX_URL:-https://zero.shakenokiri.me/stagezero.vsix}"
 VSIX_TMP="${VSIX_TMP:-/tmp/stagezero-$USER.vsix}"
 CODE_BIN="${CODE_BIN:-code}"
@@ -38,17 +38,27 @@ for cmd in git curl "$CODE_BIN"; do
   command -v "$cmd" >/dev/null 2>&1 || die "$cmd が PATH に無い"
 done
 
-# ---- 1. cssc-2026 リポジトリ ------------------------------------
+# ---- 1. cssc-2026 リポジトリを Demo/ 直下に取り込む -----------
 
-mkdir -p "$(dirname "$REPO_DIR")"
+# ~/Demo は既に shooting/, rhythmGame/, notesMaker/ が入っているので、
+# git clone は使えず、init + fetch + checkout で被せる。既存の未管理
+# ディレクトリは "untracked" として温存される。
+mkdir -p "$REPO_DIR"
 
 if [[ -d "$REPO_DIR/.git" ]]; then
-  log "cssc-2026 を更新: $REPO_DIR"
+  log "Demo/ 内のリポジトリを更新"
   (cd "$REPO_DIR" && git pull --ff-only) || warn "git pull 失敗 (既存の内容で続行)"
 else
-  log "cssc-2026 を clone: $REPO_URL -> $REPO_DIR"
-  rm -rf "$REPO_DIR"
-  git clone --depth 1 "$REPO_URL" "$REPO_DIR"
+  log "cssc-2026 の中身を Demo/ に取り込み"
+  (
+    cd "$REPO_DIR"
+    git init -q
+    git remote remove origin 2>/dev/null || true
+    git remote add origin "$REPO_URL"
+    git fetch --depth 1 origin main -q
+    git checkout -f -b main FETCH_HEAD
+    git branch --set-upstream-to=origin/main main 2>/dev/null || true
+  )
 fi
 
 # ---- 2. StageZero .vsix を DL -----------------------------------
