@@ -13,7 +13,10 @@
 やること:
 1. 会津大学の講義ミラー ([`~nisidate/CSSC/`](https://web-int.u-aizu.ac.jp/~nisidate/CSSC/))
    から `demo/{shooting,rhythmGame,notesMaker}.zip` と `text/2026_jsgame_schoolnote.pdf` を DL
-2. `~/Demo/`, `~/Project/`, `~/TeamProject/` を作成 + 権限調整
+2. `~/Demo/`, `~/Project/`, `~/TeamProject/` を作成
+   - パーミッションは `go+rX` (**読み取り + traverse のみ、write は与えない**)
+   - 同時編集は StageZero 拡張が担うので filesystem 側は read だけで十分
+   - インストラクターが撤収時に成果物を吸い出せるようにするための開放
 3. `~/final-setup.sh` (受講者が当日叩く) + `~/Desktop/final-setup.sh` を配置
 
 ```bash

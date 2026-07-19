@@ -97,10 +97,11 @@ fi
 
 # ---- 3. パーミッション ------------------------------------------
 
-log "権限: HOME=755, Demo/Project=world readable, TeamProject=完全共有"
+log "権限: HOME=755, 作業ディレクトリは group+other 読み取り可 (write は無し)"
+# 同時編集は StageZero 拡張が担うので、ファイルシステムに write 権限を
+# 開けなくても大丈夫。回収 (read) と traverse だけを許可する。
 chmod 755 "$HOME"
-chmod -R go+rX "$HOME/Project" "$HOME/Demo"
-chmod -R g=u,o=u "$HOME/TeamProject"
+chmod -R go+rX "$HOME/Project" "$HOME/Demo" "$HOME/TeamProject"
 
 # ---- 4. final-setup.sh を配置 -----------------------------
 
