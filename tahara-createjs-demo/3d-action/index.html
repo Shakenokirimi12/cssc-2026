@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CreateJS 3Dアクション デモ</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 0%, #22355f 0%, #11182a 52%, #080c16 100%);
+      color: white;
+    }
+
+    main {
+      width: min(1100px, 100%);
+      padding: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 3vw, 32px);
+      letter-spacing: 0.04em;
+    }
+
+    .help {
+      margin: 0 0 12px;
+      line-height: 1.7;
+      color: #d9e7ff;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border: 4px solid rgba(255,255,255,0.92);
+      border-radius: 14px;
+      background: #75c9ff;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #75c9ff;
+    }
+
+    #errorPanel {
+      display: none;
+      position: absolute;
+      inset: auto 12px 12px 12px;
+      max-height: 42%;
+      overflow: auto;
+      padding: 12px 14px;
+      border: 2px solid #ffe08a;
+      border-radius: 8px;
+      background: rgba(100, 20, 20, 0.95);
+      color: #fff8d8;
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .note {
+      margin: 12px 0 0;
+      color: #b9c9e3;
+      font-size: 14px;
+    }
+
+    code {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #26354e;
+    }
+  </style>
+
+  <script>
+    window.__showLessonError = function (message) {
+      const panel = document.getElementById("errorPanel");
+      if (!panel) return;
+      panel.style.display = "block";
+      panel.textContent =
+        "プログラムにエラーがあります。\n" +
+        "保存後、ブラウザを再読み込みしてください。\n\n" + message;
+    };
+
+    window.addEventListener("error", function (event) {
+      const file = event.filename ? event.filename.split("/").pop() : "不明なファイル";
+      const line = event.lineno || "?";
+      window.__showLessonError(file + " の " + line + " 行目付近\n" + event.message);
+    });
+  </script>
+
+  <script>
+    function loadScript(src, timeoutMs) {
+      return new Promise(function (resolve, reject) {
+        const script = document.createElement("script");
+        let finished = false;
+        const timer = setTimeout(function () {
+          if (finished) return;
+          finished = true;
+          script.remove();
+          reject(new Error(src + " の読み込みがタイムアウトしました"));
+        }, timeoutMs || 2500);
+
+        script.src = src;
+        script.async = false;
+        script.onload = function () {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          resolve();
+        };
+        script.onerror = function () {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          reject(new Error(src + " を読み込めませんでした"));
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function boot() {
+      const forceOffline = new URLSearchParams(location.search).has("offline");
+
+      if (!forceOffline) {
+        try {
+          await loadScript("https://code.createjs.com/1.0.0/createjs.min.js", 1800);
+        } catch (error) {
+          console.warn(error.message);
+        }
+      }
+
+      if (!window.createjs) {
+        await loadScript("createjs-fallback.js", 2500);
+      }
+
+      await loadScript("settings.js", 2500);
+      await loadScript("game.js", 2500);
+    }
+
+    window.addEventListener("DOMContentLoaded", function () {
+      boot().catch(function (error) {
+        window.__showLessonError(error.stack || error.message || String(error));
+      });
+    });
+  </script>
+</head>
+<body>
+  <main>
+    <h1>CreateJS 3Dアクション デモ</h1>
+    <p class="help">
+      移動：WASD / 矢印　ジャンプ：SPACE　ダッシュ：SHIFT　やり直し：R
+    </p>
+
+    <div class="canvas-wrap">
+      <canvas id="gameCanvas" width="960" height="540"></canvas>
+      <div id="errorPanel" role="alert"></div>
+    </div>
+
+    <p class="note">
+      画像素材は使っていません。<code>settings.js</code> の色・速さ・ステージ配置を変えるだけで改造できます。
+    </p>
+  </main>
+</body>
+</html>

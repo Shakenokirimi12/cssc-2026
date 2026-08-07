@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSSC 2026 CreateJS デモ</title>
+  <style>
+    :root { color-scheme: dark; font-family: "Yu Gothic", "Meiryo", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #101827; color: #fff; }
+    main { width: min(1100px, 100%); margin: 0 auto; padding: 40px 20px; }
+    h1 { margin: 0 0 10px; font-size: clamp(28px, 5vw, 44px); }
+    .intro { margin: 0 0 28px; color: #cbd5e1; line-height: 1.8; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .card { overflow: hidden; border: 1px solid #334155; border-radius: 16px; background: #172033; box-shadow: 0 18px 45px rgba(0,0,0,.25); }
+    .card img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #0f172a; }
+    .body { padding: 20px; }
+    h2 { margin: 0 0 10px; font-size: 24px; }
+    p { line-height: 1.7; }
+    a.button { display: inline-block; margin-top: 8px; padding: 12px 18px; border-radius: 10px; background: #e2e8f0; color: #0f172a; text-decoration: none; font-weight: 700; }
+    a.button:hover { opacity: .88; }
+    footer { margin-top: 30px; color: #94a3b8; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>CSSC 2026 CreateJS デモ</h1>
+    <p class="intro">遊びたいデモを選択してください。どちらも追加インストールなしでブラウザ上で動作します。</p>
+    <section class="grid">
+      <article class="card">
+        <img src="side-scroller/preview.png" alt="横スクロールゲーム教材のプレビュー" />
+        <div class="body">
+          <h2>横スクロールゲーム教材</h2>
+          <p>移動・ジャンプ・敵・コイン・足場などを、設定ファイルから改造できる高校生向け教材です。</p>
+          <a class="button" href="side-scroller/index.html">ゲームを開く</a>
+        </div>
+      </article>
+      <article class="card">
+        <img src="3d-action/preview.png" alt="3Dアクションデモのプレビュー" />
+        <div class="body">
+          <h2>3Dアクションデモ</h2>
+          <p>CreateJS上で3D座標と遠近投影を自作し、ジャンプや敵、ゴールを実装した完成例です。</p>
+          <a class="button" href="3d-action/index.html">ゲームを開く</a>
+        </div>
+      </article>
+    </section>
+    <footer>制作者：田原 佑稀</footer>
+  </main>
+</body>
+</html>
