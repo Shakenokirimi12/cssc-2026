@@ -1,0 +1,10 @@
+.vs/
+.vscode/
+node_modules/
+.DS_Store
+Thumbs.db
+*.user
+*.suo
+*.db
+*.sqlite
+*.vsidx
