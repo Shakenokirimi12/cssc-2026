@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSSC 2026 サンプルゲーム</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #1e293b;
+        }
+        .game-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .game-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 22px 28px;
+            background-color: #ffffff;
+            color: #0f172a;
+            text-decoration: none;
+            font-size: 1.25rem;
+            font-weight: 700;
+            border-radius: 16px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+        .game-link:hover {
+            border-color: #0284c7;
+            background-color: #f0f9ff;
+            color: #0284c7;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(2, 132, 199, 0.1);
+        }
+        .game-link:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSSC 2026 サンプルゲーム</h1>
+        <div class="game-list">
+            <a href="games/01_fruit_catch/index.html" class="game-link">
+                1. フルーツキャッチ
+            </a>
+            <a href="games/02_action/index.html" class="game-link">
+                2. 2D アクション
+            </a>
+            <a href="games/03_shooting/index.html" class="game-link">
+                3. 2D シューティング
+            </a>
+            <a href="games/03_shooting_full/index.html" class="game-link">
+                3-EX. 2D シューティング (発展版)
+            </a>
+        </div>
+    </div>
+</body>
+</html>
