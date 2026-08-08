@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>03_shooting_manual</title>
+<style>
+    @page { size: A4; margin: 12mm; }
+    body {
+        font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+        color: #1e293b;
+        line-height: 1.6;
+        font-size: 12.5px;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #fff;
+    }
+    .header-banner {
+        background: linear-gradient(135deg, #0284c7, #0369a1);
+        color: white;
+        padding: 14px 20px;
+        border-radius: 8px;
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h1 { font-size: 22px; color: #0f172a; border-bottom: 3px solid #0284c7; padding-bottom: 8px; margin-top: 0; margin-bottom: 16px; }
+    h2 { font-size: 16px; color: #0284c7; border-left: 5px solid #0284c7; padding-left: 10px; margin-top: 24px; margin-bottom: 12px; }
+    h3 { font-size: 14px; color: #334155; margin-top: 18px; margin-bottom: 8px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; }
+    h4 { font-size: 13px; color: #0284c7; margin-top: 10px; margin-bottom: 4px; }
+    .game-preview { text-align: center; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 15px; margin: 20px 0; }
+    .game-canvas-mock { width: 100%; max-width: 640px; height: 360px; background: #000; border: 2px solid #333; border-radius: 8px; margin: 0 auto; position: relative; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .img-caption { font-size: 12px; color: #64748b; margin-top: 8px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; }
+    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+    th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+    code { font-family: "Consolas", monospace; background-color: #f1f5f9; color: #0369a1; padding: 2px 5px; border-radius: 4px; }
+    pre { background-color: #0f172a; color: #f8fafc; padding: 12px 16px; border-radius: 8px; overflow-x: auto; font-family: "Consolas", monospace; font-size: 11px; line-height: 1.45; margin: 12px 0; }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    ul { margin-top: 4px; margin-bottom: 12px; padding-left: 20px; }
+    li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="header-banner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <span>コンピュータサイエンスサマーキャンプ 会津大学 2026 (CSSC 2026) - ゲーム開発解説資料</span>
+    <a href="index.html" style="color: white; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; border: 1px solid white;">ゲーム画面に戻る</a>
+</div>
+
+<h1>実践編：2Dシューティングゲーム シンプル版（03_shooting）全ソースコード完全解説</h1>
+
+<p>本資料では、CreateJSを使用した「縦スクロール 2Dシューティングゲーム (シンプル版)」の全構成ファイル（全6ファイル）のすべてのソースコードと、テキスト（`2026_jsgame_schoolnote.pdf`）と同様の行別・ブロック別詳細解説を掲載します。</p>
+
+<h2>1. ゲーム概要と実行画面</h2>
+<ul>
+    <li><strong>ゲーム内容</strong>: 宇宙空間を舞台に、自機（シアン色の戦闘機）を操作し、上空から飛来する雑魚敵をショットで撃破する王道縦スクロールシューティングです。</li>
+    <li><strong>操作方法</strong>: ← ↑ ↓ → キー（8方向移動）、Zキー / スペース（ショット）。</li>
+    <li><strong>ルール</strong>: 緑敵 (HP 1, +100点)、赤敵 (HP 2, +200点)。敵接触で残機減少。</li>
+</ul>
+
+<div class="game-preview">
+    <div class="game-canvas-mock">
+        <svg width="100%" height="100%" viewBox="0 0 960 540">
+            <rect x="0" y="0" width="960" height="540" fill="#000000" />
+            <circle cx="100" cy="80" r="2" fill="white" />
+            <circle cx="300" cy="220" r="3" fill="white" />
+            <circle cx="500" cy="150" r="1.5" fill="white" />
+            <circle cx="750" cy="350" r="2.5" fill="white" />
+            <polygon points="480,464 492,492 480,486 468,492" fill="cyan" />
+            <circle cx="480" cy="420" r="3.5" fill="white" />
+            <circle cx="480" cy="340" r="3.5" fill="white" />
+            <circle cx="320" cy="180" r="14" fill="green" />
+            <polygon points="620,130 634,154 606,154" fill="red" />
+            <circle cx="620" cy="140" r="25" fill="orange" opacity="0.6" />
+            <text x="15" y="35" font-family="sans-serif" font-size="24" fill="white">スコア: 800</text>
+            <text x="800" y="35" font-family="sans-serif" font-size="24" fill="pink">ライフ: 3</text>
+        </svg>
+    </div>
+    <div class="img-caption">図 3.1: 2Dシューティングゲーム (シンプル版) の実行イメージ画面</div>
+</div>
+
+<h2>2. ファイル構成</h2>
+<table>
+    <thead>
+        <tr><th>ファイル名</th><th>役割・概要</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>index.html</code></td><td>HTML5 Canvasの配置とCreateJSライブラリ・JavaScriptの読み込み</td></tr>
+        <tr><td><code>global.js</code></td><td>自機速度、弾・敵リスト配列、UI要素、入力フラグの宣言</td></tr>
+        <tr><td><code>init.js</code></td><td>初期化、星空背景の構築、自機（ベクター描画）とUI表示の生成</td></tr>
+        <tr><td><code>tick.js</code></td><td>BGM再生制御、星スクロール、自機移動、弾発射、敵出現、円交差衝突判定（Math.hypot）</td></tr>
+        <tr><td><code>key.js</code></td><td>8方向キーおよびショットキー入力の検知と連射管理</td></tr>
+        <tr><td><code>gameover.js</code></td><td>ゲームオーバー画面表示とオブジェクトの解放</td></tr>
+    </tbody>
+</table>
+
+<h2>3. ソースコード詳細解説</h2>
+
+<h3>3.1 index.html</h3>
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;title&gt;2Dシューティングゲーム (シンプル版)&lt;/title&gt;
+    &lt;script src="https://code.createjs.com/1.0.0/createjs.min.js"&gt;&lt;/script&gt;
+    &lt;script src="global.js"&gt;&lt;/script&gt;
+    &lt;script src="init.js"&gt;&lt;/script&gt;
+    &lt;script src="tick.js"&gt;&lt;/script&gt;
+    &lt;script src="key.js"&gt;&lt;/script&gt;
+    &lt;script src="gameover.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;canvas id="myCanvas" width="960" height="540"&gt;&lt;/canvas&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>CreateJS 1.0.0 を読み込み、`global.js` → `init.js` → `tick.js` → `key.js` → `gameover.js` の順でロードします。</li>
+</ul>
+
+<h3>3.2 global.js</h3>
+<pre><code class="javascript">const STAGE_W = 960;
+const STAGE_H = 540;
+let stage;
+let scene_id = 0;
+let frame_cnt = 0;
+let score = 0;
+let lives = 3;
+let player;
+let playerSpeed = 6;
+let bulletList = [];
+let enemyList = [];
+let stars = [];
+let scoreBoard;
+let livesBoard;
+let isPressLeft = false;
+let isPressRight = false;
+let isPressUp = false;
+let isPressDown = false;
+let isPressShoot = false;
+let shootCooldown = 0;</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>`scene_id` (0:タイトル, 1:プレイ, 2:ゲームオーバー)、`bulletList`, `enemyList`, `stars` 配列、8方向移動・ショット入力フラグを管理します。</li>
+</ul>
+
+<h3>3.3 init.js</h3>
+<pre><code class="javascript">window.addEventListener("load", init);
+
+function init() {
+    stage = new createjs.Stage("myCanvas");
+    scene_id = 0;
+    frame_cnt = 0;
+    score = 0;
+    lives = 3;
+    bulletList = [];
+    enemyList = [];
+
+    let bg = new createjs.Shape();
+    bg.graphics.beginFill("black").drawRect(0, 0, STAGE_W, STAGE_H);
+    stage.addChild(bg);
+
+    player = new createjs.Shape();
+    player.graphics.beginFill("cyan")
+        .moveTo(0, -16)
+        .lineTo(12, 12)
+        .lineTo(0, 6)
+        .lineTo(-12, 12)
+        .closePath();
+    player.x = STAGE_W / 2;
+    player.y = STAGE_H - 60;
+
+    scoreBoard = new createjs.Text("", "24px sans-serif", "white");
+    scoreBoard.x = 15; scoreBoard.y = 15;
+    stage.addChild(scoreBoard);
+
+    livesBoard = new createjs.Text("", "24px sans-serif", "pink");
+    livesBoard.x = STAGE_W - 160; livesBoard.y = 15;
+    stage.addChild(livesBoard);
+
+    initTitle();
+    createjs.Ticker.timingMode = createjs.Ticker.RAF;
+    createjs.Ticker.addEventListener("tick", handleTick);
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>`player.graphics.beginFill("cyan").moveTo(0, -16)...` で三角形ベクターの自機を描画し、`(STAGE_W/2, STAGE_H-60)` に初期配置します。</li>
+</ul>
+
+<h3>3.4 tick.js</h3>
+<pre><code class="javascript">function handleTick() {
+    if (scene_id === 1) {
+        playBGM("../../Audio/maou_bgm_neorock82.mp3", 0.18);
+    } else {
+        stopBGM();
+    }
+
+    for (let star of stars) {
+        star.y += star.speed;
+        if (star.y > STAGE_H) star.y = 0;
+    }
+
+    if (scene_id === 1) {
+        frame_cnt++;
+        if (isPressRight) player.x += playerSpeed;
+        if (isPressLeft) player.x -= playerSpeed;
+        if (isPressDown) player.y += playerSpeed;
+        if (isPressUp) player.y -= playerSpeed;
+
+        if (shootCooldown > 0) shootCooldown--;
+        if (isPressShoot && shootCooldown <= 0) {
+            shootCooldown = 12;
+            createPlayerBullet(player.x, player.y - 16, 0, -12);
+        }
+
+        if (frame_cnt % 35 === 0) spawnEnemy();
+
+        for (let i = enemyList.length - 1; i >= 0; i--) {
+            let enemy = enemyList[i];
+            for (let j = bulletList.length - 1; j >= 0; j--) {
+                let bullet = bulletList[j];
+                let dist = Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y);
+                if (dist < 22) {
+                    createExplosion(enemy.x, enemy.y, "orange");
+                    stage.removeChild(bullet);
+                    bulletList.splice(j, 1);
+                    enemy.hp--;
+                    if (enemy.hp <= 0) {
+                        score += enemy.pts;
+                        stage.removeChild(enemy);
+                        enemyList.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+        }
+        stage.update();
+    }
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>`stars` の無限縦スクロール、8方向自機移動、`shootCooldown = 12` による連射制御。`Math.hypot` で円当たり判定を行い爆発アニメーションを出します。</li>
+</ul>
+
+<h3>3.5 key.js</h3>
+<pre><code class="javascript">window.addEventListener("keydown", handleKeyDown);
+window.addEventListener("keyup", handleKeyUp);
+
+function handleKeyDown(event) {
+    let keyCode = event.keyCode;
+    switch (keyCode) {
+        case 90: case 32:
+            isPressShoot = true;
+            if (scene_id === 0) {
+                scene_id = 1;
+                stage.removeChild(titleText);
+                stage.removeChild(howToText);
+                stage.removeChild(pressSpaceText);
+                stage.addChild(player);
+            }
+            break;
+        case 37: case 65: isPressLeft = true; break;
+        case 39: case 68: isPressRight = true; break;
+        case 38: case 87: isPressUp = true; break;
+        case 40: case 83: isPressDown = true; break;
+    }
+}
+function handleKeyUp(event) {
+    let keyCode = event.keyCode;
+    switch (keyCode) {
+        case 90: case 32: isPressShoot = false; break;
+        case 37: case 65: isPressLeft = false; break;
+        case 39: case 68: isPressRight = false; break;
+        case 38: case 87: isPressUp = false; break;
+        case 40: case 83: isPressDown = false; break;
+    }
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>Zキー (90) / Space (32) でショットおよびタイトルからゲーム開始。37/39/38/40 で8方向フラグを制御します。</li>
+</ul>
+
+<h3>3.6 gameover.js</h3>
+<pre><code class="javascript">function showGameOver() {
+    scene_id = 2;
+    for (let e of enemyList) stage.removeChild(e);
+    for (let b of bulletList) stage.removeChild(b);
+    enemyList = []; bulletList = [];
+
+    let go = new createjs.Text("Game Over!", "bold 44px sans-serif", "red");
+    go.x = STAGE_W / 2 - go.getMeasuredWidth() / 2;
+    go.y = STAGE_H / 2 - 40;
+    stage.addChild(go);
+
+    let sc = new createjs.Text("あなたのスコアは " + score + " でした。", "20px sans-serif", "white");
+    sc.x = STAGE_W / 2 - sc.getMeasuredWidth() / 2;
+    sc.y = STAGE_H / 2 + 20;
+    stage.addChild(sc);
+
+    stage.update();
+    createjs.Ticker.removeAllEventListeners();
+    stage.removeAllEventListeners();
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>残存オブジェクト消去とメモリ解放、「Game Over!」とスコア結果を表示して Ticker リスナーを解除します。</li>
+</ul>
+</body>
+</html>

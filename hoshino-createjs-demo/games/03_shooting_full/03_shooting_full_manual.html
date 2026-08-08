@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>03_shooting_full_manual</title>
+<style>
+    @page { size: A4; margin: 12mm; }
+    body {
+        font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+        color: #1e293b;
+        line-height: 1.6;
+        font-size: 12.5px;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #fff;
+    }
+    .header-banner {
+        background: linear-gradient(135deg, #0284c7, #0369a1);
+        color: white;
+        padding: 14px 20px;
+        border-radius: 8px;
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h1 { font-size: 22px; color: #0f172a; border-bottom: 3px solid #0284c7; padding-bottom: 8px; margin-top: 0; margin-bottom: 16px; }
+    h2 { font-size: 16px; color: #0284c7; border-left: 5px solid #0284c7; padding-left: 10px; margin-top: 24px; margin-bottom: 12px; }
+    h3 { font-size: 14px; color: #334155; margin-top: 18px; margin-bottom: 8px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; }
+    h4 { font-size: 13px; color: #0284c7; margin-top: 10px; margin-bottom: 4px; }
+    .game-preview { text-align: center; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 15px; margin: 20px 0; }
+    .game-canvas-mock { width: 100%; max-width: 640px; height: 360px; background: #000; border: 2px solid #333; border-radius: 8px; margin: 0 auto; position: relative; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .img-caption { font-size: 12px; color: #64748b; margin-top: 8px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; }
+    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+    th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+    code { font-family: "Consolas", monospace; background-color: #f1f5f9; color: #0369a1; padding: 2px 5px; border-radius: 4px; }
+    pre { background-color: #0f172a; color: #f8fafc; padding: 12px 16px; border-radius: 8px; overflow-x: auto; font-family: "Consolas", monospace; font-size: 11px; line-height: 1.45; margin: 12px 0; }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    ul { margin-top: 4px; margin-bottom: 12px; padding-left: 20px; }
+    li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="header-banner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <span>コンピュータサイエンスサマーキャンプ 会津大学 2026 (CSSC 2026) - ゲーム開発解説資料</span>
+    <a href="index.html" style="color: white; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; border: 1px solid white;">ゲーム画面に戻る</a>
+</div>
+
+<h1>実践編：2Dシューティングゲーム 発展版（03_shooting_full）全ソースコード完全解説</h1>
+
+<p>本資料では、CreateJSを使用した「2Dシューティングゲーム (発展版・ボス戦・パワーアップ・フェーズ進行あり)」の全構成ファイル（全6ファイル）のすべてのソースコードと、テキスト（`2026_jsgame_schoolnote.pdf`）と同様の行別・ブロック別詳細解説を掲載します。</p>
+
+<h2>1. ゲーム概要と実行画面</h2>
+<ul>
+    <li><strong>ゲーム進行</strong>: 雑魚ラッシュ (Phase 0) ➔ ボス警告 (Phase 1) ➔ ボス戦 (Phase 2)。3WAYショット、全方位弾幕、ボスHPゲージ、クリア判定。</li>
+</ul>
+
+<div class="game-preview">
+    <div class="game-canvas-mock">
+        <svg width="100%" height="100%" viewBox="0 0 960 540">
+            <rect x="0" y="0" width="960" height="540" fill="#000000" />
+            <polygon points="480,80 520,105 520,155 480,180 440,155 440,105" fill="purple" stroke="magenta" stroke-width="3" />
+            <rect x="280" y="20" width="400" height="10" fill="gray" />
+            <rect x="280" y="20" width="280" height="10" fill="red" />
+            <circle cx="450" cy="220" r="5" fill="magenta" />
+            <circle cx="480" cy="230" r="5" fill="magenta" />
+            <circle cx="510" cy="220" r="5" fill="magenta" />
+            <polygon points="480,464 492,492 480,486 468,492" fill="cyan" />
+            <circle cx="480" cy="420" r="3.5" fill="white" />
+            <circle cx="440" cy="430" r="3.5" fill="yellow" />
+            <circle cx="520" cy="430" r="3.5" fill="yellow" />
+            <rect x="300" y="320" width="20" height="20" fill="red" rx="3" />
+            <text x="306" y="335" font-family="sans-serif" font-size="14" font-weight="bold" fill="white">P</text>
+            <text x="15" y="35" font-family="sans-serif" font-size="24" fill="white">スコア: 3500</text>
+            <text x="780" y="35" font-family="sans-serif" font-size="24" fill="pink">残機: 3</text>
+        </svg>
+    </div>
+    <div class="img-caption">図 4.1: 2Dシューティングゲーム (発展版・ボス戦) の実行イメージ画面</div>
+</div>
+
+<h2>2. ファイル構成</h2>
+<table>
+    <thead>
+        <tr><th>ファイル名</th><th>役割・概要</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>index.html</code></td><td>HTML5 Canvasの配置とCreateJSライブラリ・JavaScriptの読み込み</td></tr>
+        <tr><td><code>global.js</code></td><td>フェーズ管理変数（stagePhase）、ボスHP変数、パワーレベルの定義</td></tr>
+        <tr><td><code>init.js</code></td><td>初期化、星空背景生成、UI（スコア・残機・ボスHPバー）の準備</td></tr>
+        <tr><td><code>tick.js</code></td><td>フェーズ制御、パワーアップショット（3WAY）、弾幕AI、ボスHPバー更新</td></tr>
+        <tr><td><code>key.js</code></td><td>8方向移動およびショット入力管理</td></tr>
+        <tr><td><code>gameover.js</code></td><td>ゲームオーバー / 🏆 STAGE CLEAR! 画面のオーバーレイ表示</td></tr>
+    </tbody>
+</table>
+
+<h2>3. ソースコード詳細解説</h2>
+
+<h3>3.1 index.html</h3>
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;title&gt;2Dシューティングゲーム (発展版・ボス戦あり)&lt;/title&gt;
+    &lt;script src="https://code.createjs.com/1.0.0/createjs.min.js"&gt;&lt;/script&gt;
+    &lt;script src="global.js"&gt;&lt;/script&gt;
+    &lt;script src="init.js"&gt;&lt;/script&gt;
+    &lt;script src="tick.js"&gt;&lt;/script&gt;
+    &lt;script src="key.js"&gt;&lt;/script&gt;
+    &lt;script src="gameover.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;canvas id="myCanvas" width="960" height="540"&gt;&lt;/canvas&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<h3>3.2 global.js</h3>
+<pre><code class="javascript">const STAGE_W = 960;
+const STAGE_H = 540;
+let stage;
+let scene_id = 0;
+let frame_cnt = 0;
+let score = 0;
+let lives = 3;
+let player;
+let playerSpeed = 6;
+let bulletList = [];
+let enemyList = [];
+let enemyBulletList = [];
+let itemList = [];
+let boss = null;
+let bossHp = 0;
+let bossMaxHp = 30;
+let bossVx = 1.8;
+let stagePhase = 0; // 0:雑魚, 1:WARNING, 2:ボス戦
+let phaseTimer = 0;
+let playerPower = 1;</code></pre>
+
+<h3>3.3 init.js</h3>
+<pre><code class="javascript">window.addEventListener("load", init);
+
+function init() {
+    stage = new createjs.Stage("myCanvas");
+    scene_id = 0;
+    frame_cnt = 0;
+    score = 0;
+    lives = 3;
+    bulletList = [];
+    enemyList = [];
+    enemyBulletList = [];
+    itemList = [];
+    boss = null;
+
+    let bg = new createjs.Shape();
+    bg.graphics.beginFill("black").drawRect(0, 0, STAGE_W, STAGE_H);
+    stage.addChild(bg);
+
+    stars = [];
+    for (let i = 0; i < 45; i++) {
+        let star = new createjs.Shape();
+        let size = Math.random() * 2 + 1;
+        star.graphics.beginFill("white").drawCircle(0, 0, size);
+        star.x = Math.random() * STAGE_W;
+        star.y = Math.random() * STAGE_H;
+        star.speed = size * 1.5;
+        stage.addChild(star);
+        stars.push(star);
+    }
+
+    player = new createjs.Shape();
+    player.graphics.beginFill("cyan")
+        .moveTo(0, -16)
+        .lineTo(12, 12)
+        .lineTo(0, 6)
+        .lineTo(-12, 12)
+        .closePath();
+    player.x = STAGE_W / 2;
+    player.y = STAGE_H - 60;
+
+    scoreBoard = new createjs.Text("", "24px sans-serif", "white");
+    scoreBoard.x = 15; scoreBoard.y = 15;
+    stage.addChild(scoreBoard);
+
+    bossHpBg = new createjs.Shape();
+    bossHpBg.graphics.beginFill("gray").drawRect(0, 0, 400, 10);
+    bossHpBg.x = STAGE_W / 2 - 200; bossHpBg.y = 20; bossHpBg.visible = false;
+    stage.addChild(bossHpBg);
+
+    bossHpFill = new createjs.Shape();
+    bossHpFill.graphics.beginFill("red").drawRect(0, 0, 400, 10);
+    bossHpFill.x = STAGE_W / 2 - 200; bossHpFill.y = 20; bossHpFill.visible = false;
+    stage.addChild(bossHpFill);
+
+    initTitle();
+    createjs.Ticker.timingMode = createjs.Ticker.RAF;
+    createjs.Ticker.addEventListener("tick", handleTick);
+}</code></pre>
+
+<h3>3.4 tick.js</h3>
+<pre><code class="javascript">if (playerPower >= 3) {
+    createPlayerBullet(player.x, player.y - 16, 0, -12);
+    createPlayerBullet(player.x - 8, player.y - 10, -3.5, -11);
+    createPlayerBullet(player.x + 8, player.y - 10, 3.5, -11);
+}
+
+// 8方向全方位リング弾幕
+let count = 8;
+for (let i = 0; i < count; i++) {
+    let rad = (Math.PI * 2 / count) * i;
+    shootEnemyBullet(boss.x, boss.y + 10, Math.cos(rad) * 2.2, Math.sin(rad) * 2.2);
+}
+
+// ボスHPバー更新
+bossHpFill.scaleX = Math.max(0, bossHp / bossMaxHp);</code></pre>
+
+<h3>3.5 key.js</h3>
+<pre><code class="javascript">function handleKeyDown(event) {
+    let keyCode = event.keyCode;
+    switch (keyCode) {
+        case 90: case 32:
+            isPressShoot = true;
+            if (scene_id === 0) startGame();
+            if (scene_id >= 2) initTitle();
+            break;
+        case 37: case 65: isPressLeft = true; break;
+        case 39: case 68: isPressRight = true; break;
+        case 38: case 87: isPressUp = true; break;
+        case 40: case 83: isPressDown = true; break;
+    }
+}
+function handleKeyUp(event) {
+    let keyCode = event.keyCode;
+    switch (keyCode) {
+        case 90: case 32: isPressShoot = false; break;
+        case 37: case 65: isPressLeft = false; break;
+        case 39: case 68: isPressRight = false; break;
+        case 38: case 87: isPressUp = false; break;
+        case 40: case 83: isPressDown = false; break;
+    }
+}</code></pre>
+
+<h3>3.6 gameover.js</h3>
+<pre><code class="javascript">function showGameOver(isClear = false) {
+    scene_id = isClear ? 3 : 2;
+    let resultContainer = new createjs.Container();
+    let overlay = new createjs.Shape();
+    overlay.graphics.beginFill("rgba(0, 0, 0, 0.75)").drawRect(0, 0, STAGE_W, STAGE_H);
+    resultContainer.addChild(overlay);
+
+    let msgStr = isClear ? "🎉 STAGE CLEAR! 🎉" : "GAME OVER";
+    let msgColor = isClear ? "yellow" : "red";
+    let msgText = new createjs.Text(msgStr, "bold 44px sans-serif", msgColor);
+    msgText.x = STAGE_W / 2 - msgText.getMeasuredWidth() / 2; msgText.y = 160;
+    resultContainer.addChild(msgText);
+
+    stage.addChild(resultContainer);
+    stage.addEventListener("stagemousedown", function backToTitle() {
+        stage.removeEventListener("stagemousedown", backToTitle);
+        initTitle();
+    });
+    stage.update();
+}</code></pre>
+</body>
+</html>

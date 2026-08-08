@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>ジャンプ＆ラン！アクションゲーム</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px 0;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+        canvas {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            background-color: #000;
+        }
+        a {
+            margin-top: 16px;
+            color: #0284c7;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            color: #38bdf8;
+        }
+    </style>
+    <!-- CreateJSライブラリの読み込み -->
+    <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+    <!-- 分割された各プログラムの読み込み -->
+    <script src="global.js"></script>
+    <script src="init.js"></script>
+    <script src="tick.js"></script>
+    <script src="key.js"></script>
+    <script src="gameover.js"></script>
+</head>
+<body>
+    <!-- ゲーム画面を描画するキャンバス（960x540ピクセル） -->
+    <canvas id="myCanvas" width="960" height="540"></canvas>
+    <br>
+    <!-- ポータル画面への戻りリンクとマニュアルリンク -->
+    <div style="margin-top: 16px; display: flex; gap: 24px;">
+        <a href="../../index.html" style="margin-top: 0;">← サンプル一覧に戻る</a>
+        <a href="02_action_manual.html" style="margin-top: 0; color: #16a34a;">コード解説マニュアル</a>
+    </div>
+</body>
+</html>

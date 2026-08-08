@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>02_action_manual</title>
+<style>
+    @page { size: A4; margin: 12mm; }
+    body {
+        font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+        color: #1e293b;
+        line-height: 1.6;
+        font-size: 12.5px;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #fff;
+    }
+    .header-banner {
+        background: linear-gradient(135deg, #0284c7, #0369a1);
+        color: white;
+        padding: 14px 20px;
+        border-radius: 8px;
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h1 { font-size: 22px; color: #0f172a; border-bottom: 3px solid #0284c7; padding-bottom: 8px; margin-top: 0; margin-bottom: 16px; }
+    h2 { font-size: 16px; color: #0284c7; border-left: 5px solid #0284c7; padding-left: 10px; margin-top: 24px; margin-bottom: 12px; }
+    h3 { font-size: 14px; color: #334155; margin-top: 18px; margin-bottom: 8px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; }
+    h4 { font-size: 13px; color: #0284c7; margin-top: 10px; margin-bottom: 4px; }
+    .game-preview { text-align: center; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 15px; margin: 20px 0; }
+    .game-canvas-mock { width: 100%; max-width: 640px; height: 360px; background: #e6f7ff; border: 2px solid #333; border-radius: 8px; margin: 0 auto; position: relative; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .img-caption { font-size: 12px; color: #64748b; margin-top: 8px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; }
+    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+    th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+    code { font-family: "Consolas", monospace; background-color: #f1f5f9; color: #0369a1; padding: 2px 5px; border-radius: 4px; }
+    pre { background-color: #0f172a; color: #f8fafc; padding: 12px 16px; border-radius: 8px; overflow-x: auto; font-family: "Consolas", monospace; font-size: 11px; line-height: 1.45; margin: 12px 0; }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    ul { margin-top: 4px; margin-bottom: 12px; padding-left: 20px; }
+    li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="header-banner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <span>コンピュータサイエンスサマーキャンプ 会津大学 2026 (CSSC 2026) - ゲーム開発解説資料</span>
+    <a href="index.html" style="color: white; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; border: 1px solid white;">ゲーム画面に戻る</a>
+</div>
+
+<h1>実践編：2Dアクションゲーム（02_action）全ソースコード完全解説</h1>
+
+<p>本資料では、CreateJSを使用した「2Dジャンプ＆ラン アクションゲーム」の全構成ファイル（全6ファイル）のすべてのソースコードと、テキスト（`2026_jsgame_schoolnote.pdf`）と同様の行別・ブロック別詳細解説を掲載します。</p>
+
+<h2>1. ゲーム概要と実行画面</h2>
+<ul>
+    <li><strong>ゲーム内容</strong>: 自機（青い四角形）を操作し、障害物（赤のトゲ）や落とし穴を避けながらコインを獲得し、右上のゴール旗を目指す2D物理アクションゲームです。</li>
+    <li><strong>操作方法</strong>: ← / → キー（左右移動）、↑ / W / スペース（ジャンプ）。</li>
+    <li><strong>物理ルール</strong>: 重力 (GRAVITY = 0.6)、ジャンプ初速 (JUMP_POWER = -12)、接地判定。</li>
+</ul>
+
+<div class="game-preview">
+    <div class="game-canvas-mock">
+        <svg width="100%" height="100%" viewBox="0 0 960 540">
+            <rect x="0" y="0" width="960" height="540" fill="#e6f7ff" />
+            <rect x="0" y="460" width="960" height="80" fill="green" />
+            <rect x="160" y="370" width="140" height="20" fill="green" />
+            <rect x="370" y="290" width="160" height="20" fill="green" />
+            <rect x="600" y="210" width="150" height="20" fill="green" />
+            <rect x="800" y="150" width="130" height="20" fill="green" />
+            <rect x="385" y="260" width="30" height="30" fill="blue" />
+            <polygon points="310,460 325,430 340,460" fill="red" />
+            <polygon points="570,460 585,430 600,460" fill="red" />
+            <circle cx="220" cy="330" r="12" fill="gold" />
+            <circle cx="670" cy="170" r="12" fill="gold" />
+            <rect x="860" y="110" width="4" height="40" fill="black" />
+            <polygon points="864,110 890,120 864,130" fill="green" />
+            <text x="20" y="45" font-family="sans-serif" font-size="26" font-weight="bold" fill="black">スコア: 450</text>
+        </svg>
+    </div>
+    <div class="img-caption">図 2.1: 2Dアクションゲームの実行イメージ画面</div>
+</div>
+
+<h2>2. ファイル構成</h2>
+<table>
+    <thead>
+        <tr><th>ファイル名</th><th>役割・概要</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>index.html</code></td><td>HTML5 Canvasの配置とCreateJSライブラリ・JavaScriptの読み込み</td></tr>
+        <tr><td><code>global.js</code></td><td>重力・ジャンプ力などの物理定数と各種ゲームオブジェクト変数の宣言</td></tr>
+        <tr><td><code>init.js</code></td><td>初期化、タイトル画面、マップ（足場・トゲ・コイン・ゴール）のレイアウト生成</td></tr>
+        <tr><td><code>tick.js</code></td><td>重力移動演算、足場着地判定、コイン・トゲ・ゴールの各種衝突判定</td></tr>
+        <tr><td><code>key.js</code></td><td>左右移動およびジャンプ入力の状態フラグ管理</td></tr>
+        <tr><td><code>gameover.js</code></td><td>ゲームオーバー / STAGE CLEAR 画面の描画およびファンファーレSE再生</td></tr>
+    </tbody>
+</table>
+
+<h2>3. ソースコード詳細解説</h2>
+
+<h3>3.1 index.html</h3>
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;title&gt;ジャンプ＆ラン！アクションゲーム&lt;/title&gt;
+    &lt;script src="https://code.createjs.com/1.0.0/createjs.min.js"&gt;&lt;/script&gt;
+    &lt;script src="global.js"&gt;&lt;/script&gt;
+    &lt;script src="init.js"&gt;&lt;/script&gt;
+    &lt;script src="tick.js"&gt;&lt;/script&gt;
+    &lt;script src="key.js"&gt;&lt;/script&gt;
+    &lt;script src="gameover.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;canvas id="myCanvas" width="960" height="540"&gt;&lt;/canvas&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>CreateJS 1.0.0 を読込、`global.js` → `init.js` → `tick.js` → `key.js` → `gameover.js` の順でファイル分割ロードを行います。</li>
+</ul>
+
+<h3>3.2 global.js</h3>
+<pre><code class="javascript">const STAGE_W = 960;
+const STAGE_H = 540;
+
+const PLAYER_SPEED = 6;
+const JUMP_POWER = -12;
+const GRAVITY = 0.6;
+const PLAYER_SIZE = 30;
+
+let stage;
+let scene_id = 0;
+let score = 0;
+
+let player;
+let playerVX = 0;
+let playerVY = 0;
+let isGrounded = false;
+
+let platforms = [];
+let coins = [];
+let hazards = [];
+let goal;
+
+let isPressLeft = false;
+let isPressRight = false;
+let isPressJump = false;
+let scoreText;</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>`PLAYER_SPEED = 6` (移動速度), `JUMP_POWER = -12` (ジャンプ初速), `GRAVITY = 0.6` (重力加速度) で物理挙動をパラメーター管理します。</li>
+    <li>`playerVX` / `playerVY` で速度ベクトル、`isGrounded` で接地フラグを保持します。</li>
+</ul>
+
+<h3>3.3 init.js</h3>
+<pre><code class="javascript">window.addEventListener("load", init);
+
+function init() {
+    stage = new createjs.Stage("myCanvas");
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    initTitle();
+    createjs.Ticker.timingMode = createjs.Ticker.RAF;
+    createjs.Ticker.addEventListener("tick", handleTick);
+}
+
+function initTitle() {
+    scene_id = 0;
+    stage.removeAllChildren();
+    let bg = new createjs.Shape();
+    bg.graphics.beginFill("#e6f7ff").drawRect(0, 0, STAGE_W, STAGE_H);
+    stage.addChild(bg);
+    let titleText = new createjs.Text("アクションゲーム", "40px bold sans-serif", "blue");
+    titleText.x = STAGE_W / 2 - titleText.getMeasuredWidth() / 2;
+    titleText.y = 150;
+    stage.addChild(titleText);
+    stage.addEventListener("stagemousedown", startGame);
+    stage.update();
+}
+
+function startGame() {
+    if (scene_id !== 0) return;
+    scene_id = 1;
+    stage.removeAllChildren();
+    stage.removeEventListener("stagemousedown", startGame);
+    score = 0;
+    platforms = []; coins = []; hazards = [];
+    createStageLayout();
+    createPlayer();
+    scoreText = new createjs.Text("スコア: 0", "26px bold sans-serif", "black");
+    scoreText.x = 20; scoreText.y = 20;
+    stage.addChild(scoreText);
+}
+
+function createPlayer() {
+    player = new createjs.Shape();
+    player.graphics.beginFill("blue").drawRect(-PLAYER_SIZE/2, -PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE);
+    player.x = 60; player.y = 400;
+    playerVX = 0; playerVY = 0; isGrounded = false;
+    stage.addChild(player);
+}
+
+function createStageLayout() {
+    let platformData = [
+        { x: 0, y: 460, w: 960, h: 80 },
+        { x: 160, y: 370, w: 140, h: 20 },
+        { x: 370, y: 290, w: 160, h: 20 },
+        { x: 600, y: 210, w: 150, h: 20 },
+        { x: 800, y: 150, w: 130, h: 20 }
+    ];
+    for (let data of platformData) {
+        let p = new createjs.Shape();
+        p.graphics.beginFill("green").drawRect(0, 0, data.w, data.h);
+        p.x = data.x; p.y = data.y; p.w = data.w; p.h = data.h;
+        stage.addChild(p); platforms.push(p);
+    }
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>`createPlayer()` で自機四角形を作成し `(60, 400)` に初期配置します。</li>
+    <li>`createStageLayout()` で配列定義された座標データをループ生成し、足場・トゲ・コイン・ゴール旗を構築します。</li>
+</ul>
+
+<h3>3.4 tick.js</h3>
+<pre><code class="javascript">function handleTick(event) {
+    if (scene_id === 1) {
+        playerVX = 0;
+        if (isPressLeft) playerVX = -PLAYER_SPEED;
+        if (isPressRight) playerVX = PLAYER_SPEED;
+
+        if (isPressJump && isGrounded) {
+            playerVY = JUMP_POWER;
+            isGrounded = false;
+        }
+
+        playerVY += GRAVITY;
+        player.x += playerVX;
+        player.y += playerVY;
+
+        if (player.x - PLAYER_SIZE/2 < 0) player.x = PLAYER_SIZE/2;
+        if (player.x + PLAYER_SIZE/2 > STAGE_W) player.x = STAGE_W - PLAYER_SIZE/2;
+
+        checkPlatformCollision();
+        if (player.y > STAGE_H + 50) {
+            showGameOver(false);
+            return;
+        }
+        checkHazardCollision();
+        checkCoinCollision();
+        checkGoalCollision();
+    }
+    stage.update();
+}
+
+function checkPlatformCollision() {
+    isGrounded = false;
+    for (let p of platforms) {
+        let feetY = player.y + PLAYER_SIZE / 2;
+        let prevFeetY = feetY - playerVY;
+        if (player.x + PLAYER_SIZE/3 >= p.x && player.x - PLAYER_SIZE/3 <= p.x + p.w) {
+            if (prevFeetY <= p.y + 6 && feetY >= p.y && playerVY >= 0) {
+                player.y = p.y - PLAYER_SIZE / 2;
+                playerVY = 0;
+                isGrounded = true;
+                break;
+            }
+        }
+    }
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>`playerVY += GRAVITY` で重力落下計算。</li>
+    <li>`checkPlatformCollision()` では前フレームの足元 `prevFeetY` が足場上面 `p.y` より上であり、現在 `feetY` が足場上面に達した時のみ着地 (`isGrounded = true`) と判定し、すり抜けを防ぎます。</li>
+</ul>
+
+<h3>3.5 key.js</h3>
+<pre><code class="javascript">function handleKeyDown(event) {
+    if (event.keyCode === 37 || event.keyCode === 65) isPressLeft = true;
+    if (event.keyCode === 39 || event.keyCode === 68) isPressRight = true;
+    if (event.keyCode === 38 || event.keyCode === 87 || event.keyCode === 32) {
+        isPressJump = true;
+        if (scene_id === 0) startGame();
+        if (scene_id >= 2) initTitle();
+    }
+}
+function handleKeyUp(event) {
+    if (event.keyCode === 37 || event.keyCode === 65) isPressLeft = false;
+    if (event.keyCode === 39 || event.keyCode === 68) isPressRight = false;
+    if (event.keyCode === 38 || event.keyCode === 87 || event.keyCode === 32) isPressJump = false;
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>`keyCode` (37:左, 39:右, 38/32:ジャンプ) の状態フラグ操作およびタイトル・結果画面からの画面遷移を処理します。</li>
+</ul>
+
+<h3>3.6 gameover.js</h3>
+<pre><code class="javascript">function showGameOver(isClear) {
+    scene_id = isClear ? 3 : 2;
+    if (isClear) playSE("../../Audio/ラッパのファンファーレ.mp3");
+
+    let msg = isClear ? "STAGE CLEAR!" : "GAME OVER";
+    let color = isClear ? "green" : "red";
+
+    let resultText = new createjs.Text(msg, "44px bold sans-serif", color);
+    resultText.x = STAGE_W / 2 - resultText.getMeasuredWidth() / 2;
+    resultText.y = 180;
+    stage.addChild(resultText);
+
+    setTimeout(function() {
+        stage.addEventListener("stagemousedown", initTitle);
+    }, 500);
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>クリア時 (`isClear === true`) にファンファーレを鳴らし `STAGE CLEAR!` を表示、失敗時は `GAME OVER` を表示して、500msの遅延後にタイトルに戻れるようにします。</li>
+</ul>
+</body>
+</html>

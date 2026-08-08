@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>01_fruit_catch_manual</title>
+<style>
+    @page { size: A4; margin: 12mm; }
+    body {
+        font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+        color: #1e293b;
+        line-height: 1.6;
+        font-size: 12.5px;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #fff;
+    }
+    .header-banner {
+        background: linear-gradient(135deg, #0284c7, #0369a1);
+        color: white;
+        padding: 14px 20px;
+        border-radius: 8px;
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h1 { font-size: 22px; color: #0f172a; border-bottom: 3px solid #0284c7; padding-bottom: 8px; margin-top: 0; margin-bottom: 16px; }
+    h2 { font-size: 16px; color: #0284c7; border-left: 5px solid #0284c7; padding-left: 10px; margin-top: 24px; margin-bottom: 12px; }
+    h3 { font-size: 14px; color: #334155; margin-top: 18px; margin-bottom: 8px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px; }
+    h4 { font-size: 13px; color: #0284c7; margin-top: 10px; margin-bottom: 4px; }
+    .game-preview { text-align: center; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 15px; margin: 20px 0; }
+    .game-canvas-mock { width: 100%; max-width: 640px; height: 360px; background: #ffffff; border: 2px solid #333; border-radius: 8px; margin: 0 auto; position: relative; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .img-caption { font-size: 12px; color: #64748b; margin-top: 8px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12px; }
+    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+    th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+    code { font-family: "Consolas", monospace; background-color: #f1f5f9; color: #0369a1; padding: 2px 5px; border-radius: 4px; }
+    pre { background-color: #0f172a; color: #f8fafc; padding: 12px 16px; border-radius: 8px; overflow-x: auto; font-family: "Consolas", monospace; font-size: 11px; line-height: 1.45; margin: 12px 0; }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    ul { margin-top: 4px; margin-bottom: 12px; padding-left: 20px; }
+    li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="header-banner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <span>コンピュータサイエンスサマーキャンプ 会津大学 2026 (CSSC 2026) - ゲーム開発解説資料</span>
+    <a href="index.html" style="color: white; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; border: 1px solid white;">ゲーム画面に戻る</a>
+</div>
+
+<h1>実践編：フルーツキャッチゲーム（01_fruit_catch）全ソースコード完全解説</h1>
+
+<p>本資料では、CreateJSを使用した「フルーツキャッチゲーム」の全プログラム（7ファイル）の全ソースコードと、テキスト（`2026_jsgame_schoolnote.pdf`）と同様の行別・ブロック別詳細解説を掲載します。</p>
+
+<h2>1. ゲーム概要と実行画面</h2>
+<ul>
+    <li><strong>ゲーム内容</strong>: 上空から落ちてくるアイテム（赤りんご・金の星・紫の毒アイテム）を、画面下部のカゴを操作してキャッチするゲームです。</li>
+    <li><strong>操作方法</strong>: キーボード（← / → または A / D）、マウス操作（カーソルに追従）。</li>
+    <li><strong>ルール</strong>: 赤りんご (+100点)、金の星 (+300点)、紫の毒アイテム (-200点)。りんごや星を見逃すとライフ減少。</li>
+</ul>
+
+<div class="game-preview">
+    <div class="game-canvas-mock">
+        <svg width="100%" height="100%" viewBox="0 0 960 540">
+            <rect x="0" y="0" width="960" height="540" fill="#ffffff" />
+            <rect x="0" y="510" width="960" height="30" fill="green" />
+            <rect x="430" y="480" width="100" height="30" fill="brown" rx="4" />
+            <circle cx="250" cy="180" r="16" fill="red" />
+            <rect x="680" y="120" width="24" height="24" fill="gold" transform="rotate(45 692 132)" />
+            <circle cx="480" cy="280" r="16" fill="purple" />
+            <text x="20" y="45" font-family="sans-serif" font-size="26" font-weight="bold" fill="black">スコア: 1200</text>
+            <text x="780" y="45" font-family="sans-serif" font-size="26" font-weight="bold" fill="red">ライフ: ❤️❤️❤️</text>
+        </svg>
+    </div>
+    <div class="img-caption">図 1.1: フルーツキャッチゲームの実行イメージ画面</div>
+</div>
+
+<h2>2. ファイル構成</h2>
+<table>
+    <thead>
+        <tr><th>ファイル名</th><th>役割・概要</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><code>index.html</code></td><td>HTML5 Canvasの配置とCreateJSライブラリ・JavaScriptの読み込み</td></tr>
+        <tr><td><code>global.js</code></td><td>定数（画面サイズ・速度等）とグローバル変数の定義</td></tr>
+        <tr><td><code>init.js</code></td><td>初期化、タイトル画面の作成、ゲーム開始処理、カゴの生成</td></tr>
+        <tr><td><code>tick.js</code></td><td>フレーム更新（handleTick）、アイテム生成・移動・当たり判定・スコアポップアップ</td></tr>
+        <tr><td><code>key.js</code></td><td>キーボード入力の検出（keydown / keyup）</td></tr>
+        <tr><td><code>mouse.js</code></td><td>マウス移動の検出（stagemousemove）とカゴのX座標同期</td></tr>
+        <tr><td><code>gameover.js</code></td><td>ゲームオーバー画面の表示とリスタート準備</td></tr>
+    </tbody>
+</table>
+
+<h2>3. ソースコード詳細解説</h2>
+
+<h3>3.1 index.html</h3>
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;html lang="ja"&gt;
+&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;title&gt;キャッチ！フルーツフォール&lt;/title&gt;
+    &lt;style&gt;
+        body {
+            margin: 0;
+            padding: 20px 0;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+        canvas {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            background-color: #000;
+        }
+        a {
+            margin-top: 16px;
+            color: #0284c7;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            color: #38bdf8;
+        }
+    &lt;/style&gt;
+    &lt;!-- CreateJSライブラリの読み込み --&gt;
+    &lt;script src="https://code.createjs.com/1.0.0/createjs.min.js"&gt;&lt;/script&gt;
+    &lt;!-- 分割された各プログラムの読み込み --&gt;
+    &lt;script src="global.js"&gt;&lt;/script&gt;
+    &lt;script src="init.js"&gt;&lt;/script&gt;
+    &lt;script src="tick.js"&gt;&lt;/script&gt;
+    &lt;script src="key.js"&gt;&lt;/script&gt;
+    &lt;script src="mouse.js"&gt;&lt;/script&gt;
+    &lt;script src="gameover.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;!-- ゲーム画面を描画するキャンバス（960x540ピクセル） --&gt;
+    &lt;canvas id="myCanvas" width="960" height="540"&gt;&lt;/canvas&gt;
+    &lt;br&gt;
+    &lt;!-- ポータル画面への戻りリンク --&gt;
+    &lt;a href="../../index.html"&gt;← サンプル一覧に戻る&lt;/a&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li><strong>1-2行目</strong>: DOCTYPE宣言と言語指定 (`lang="ja"`)。</li>
+    <li><strong>6-33行目</strong>: Flexbox による中央揃え、Canvas の影指定などの CSS スタイル。</li>
+    <li><strong>35行目</strong>: `createjs.min.js` (1.0.0) をCDNから読み込みます。CreateJSはCanvas描画やTicker機能を提供します。</li>
+    <li><strong>37-42行目</strong>: 分割した全JavaScriptファイルを依存関係順に読み込みます。</li>
+    <li><strong>46行目</strong>: 960 × 540 ピクセルの `<canvas>` タグを配置しています。</li>
+</ul>
+
+<h3>3.2 global.js</h3>
+<pre><code class="javascript">// ------------------------------------------
+// グローバル変数と定数の定義 (global.js)
+// ------------------------------------------
+
+// 画面サイズの定数宣言（横幅960px、高さ540px）
+const STAGE_W = 960;
+const STAGE_H = 540;
+
+// 自機（カゴ）のパラメータ
+const BASKET_SPEED = 8;     // 移動速度
+const BASKET_WIDTH = 100;   // カゴの横幅
+
+// ゲームバランスのパラメータ
+const FALL_SPEED_BASE = 3.5; // 落下速度の初期値
+const MAX_LIVES = 3;         // 最大ライフ（ミス許容回数）
+
+// ステージと画面状態の変数
+let stage;         // CreateJSのStageオブジェクト
+let scene_id = 0;  // 画面状態（0:タイトル画面, 1:プレイ画面, 2:ゲームオーバー画面）
+let score = 0;     // 現在のスコア
+let lives = MAX_LIVES; // 残りライフ
+let frame_cnt = 0; // 経過フレーム数のカウンター
+
+// ゲーム要素の参照用変数
+let basket;       // 自機（カゴ）の表示オブジェクト
+let itemList = []; // 画面上の落下アイテムを保持する配列
+
+// キー入力の状態フラグ（押されている間 true）
+let isPressLeft = false;  // 左矢印キーまたはAキー
+let isPressRight = false; // 右矢印キーまたはDキー
+
+// UI表示テキスト
+let scoreText; // スコア表示用のTextオブジェクト
+let livesText; // ライフ表示用のTextオブジェクト</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li><strong>6-7行目</strong>: 画面サイズ `STAGE_W = 960`, `STAGE_H = 540` を定数として定義。</li>
+    <li><strong>10-15行目</strong>: カゴの移動速度 (8px/frame)、幅 (100px)、アイテム落下初期速度 (3.5px)、最大ライフ (3) を管理します。</li>
+    <li><strong>19行目</strong>: `scene_id`（0:タイトル, 1:プレイ中, 2:ゲームオーバー）で画面状態を数値で保持します。</li>
+    <li><strong>26行目</strong>: 画面上の全落下アイテムオブジェクトを格納する配列 `itemList` です。</li>
+</ul>
+
+<h3>3.3 init.js</h3>
+<pre><code class="javascript">// ------------------------------------------
+// 初期化処理と画面生成 (init.js)
+// ------------------------------------------
+
+window.addEventListener("load", init);
+
+function init() {
+    stage = new createjs.Stage("myCanvas");
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    initMouseControl();
+    initTitle();
+
+    createjs.Ticker.timingMode = createjs.Ticker.RAF;
+    createjs.Ticker.addEventListener("tick", handleTick);
+}
+
+function initTitle() {
+    scene_id = 0;
+    stage.removeAllChildren();
+
+    let bg = new createjs.Shape();
+    bg.graphics.beginFill("white").drawRect(0, 0, STAGE_W, STAGE_H);
+    stage.addChild(bg);
+
+    let titleText = new createjs.Text("フルーツキャッチゲーム", "40px bold sans-serif", "black");
+    titleText.x = STAGE_W / 2 - titleText.getMeasuredWidth() / 2;
+    titleText.y = 150;
+    stage.addChild(titleText);
+
+    let guideText = new createjs.Text("← → キー または マウス操作 でカゴを動かそう！\n落ちてくる赤りんご（+100）と金アイテム（+300）を取ろう！\n紫の毒アイテム（-200）は避けてね！", "20px sans-serif", "#333333");
+    guideText.textAlign = "center";
+    guideText.x = STAGE_W / 2;
+    guideText.y = 240;
+    stage.addChild(guideText);
+
+    let startText = new createjs.Text("スペースキー または クリック でスタート！", "24px bold sans-serif", "red");
+    startText.x = STAGE_W / 2 - startText.getMeasuredWidth() / 2;
+    startText.y = 360;
+    stage.addChild(startText);
+
+    stage.addEventListener("stagemousedown", startGame);
+    stage.update();
+}
+
+function startGame() {
+    if (scene_id !== 0) return;
+
+    scene_id = 1;
+    stage.removeAllChildren();
+    stage.removeEventListener("stagemousedown", startGame);
+
+    score = 0;
+    lives = MAX_LIVES;
+    frame_cnt = 0;
+    itemList = [];
+
+    let bg = new createjs.Shape();
+    bg.graphics.beginFill("white").drawRect(0, 0, STAGE_W, STAGE_H);
+    stage.addChild(bg);
+
+    let ground = new createjs.Shape();
+    ground.graphics.beginFill("green").drawRect(0, STAGE_H - 30, STAGE_W, 30);
+    stage.addChild(ground);
+
+    createBasket();
+
+    scoreText = new createjs.Text("スコア: 0", "26px bold sans-serif", "black");
+    scoreText.x = 20;
+    scoreText.y = 20;
+    stage.addChild(scoreText);
+
+    livesText = new createjs.Text("ライフ: " + lives, "26px bold sans-serif", "red");
+    livesText.x = STAGE_W - 160;
+    livesText.y = 20;
+    stage.addChild(livesText);
+}
+
+function createBasket() {
+    basket = new createjs.Container();
+
+    let body = new createjs.Shape();
+    body.graphics.beginFill("brown").drawRect(-BASKET_WIDTH / 2, -15, BASKET_WIDTH, 30);
+    basket.addChild(body);
+
+    basket.x = STAGE_W / 2;
+    basket.y = STAGE_H - 45;
+    stage.addChild(basket);
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li><strong>6行目</strong>: HTML読み込み完了時に `init()` を呼び出します。</li>
+    <li><strong>11行目</strong>: Canvas を CreateJS の Stage として初期化します。</li>
+    <li><strong>24-25行目</strong>: `createjs.Ticker.timingMode = createjs.Ticker.RAF` により、RequestAnimationFrameで約60FPSのタイマーを起動します。</li>
+    <li><strong>31行目</strong>: `stage.removeAllChildren()` でステージ上の古い描画要素を消去。</li>
+    <li><strong>104-114行目</strong>: `createjs.Container` でカゴオブジェクトを作成し、中心原点 `(-BASKET_WIDTH/2, -15)` で配置します。</li>
+</ul>
+
+<h3>3.4 tick.js</h3>
+<pre><code class="javascript">// ------------------------------------------
+// 毎フレーム更新処理 (tick.js)
+// ------------------------------------------
+
+function handleTick() {
+    if (scene_id === 1) {
+        frame_cnt++;
+
+        if (isPressLeft) basket.x -= BASKET_SPEED;
+        if (isPressRight) basket.x += BASKET_SPEED;
+
+        if (basket.x < BASKET_WIDTH / 2) basket.x = BASKET_WIDTH / 2;
+        if (basket.x > STAGE_W - BASKET_WIDTH / 2) basket.x = STAGE_W - BASKET_WIDTH / 2;
+
+        if (frame_cnt % 35 === 0) {
+            spawnItem();
+        }
+
+        updateItems();
+    }
+
+    stage.update();
+}
+
+function playSE(path) {
+    try {
+        let audio = new Audio(path);
+        audio.currentTime = 0;
+        audio.play().catch(function(e){});
+    } catch(e) {}
+}
+
+function spawnItem() {
+    let item = new createjs.Container();
+    let rand = Math.random();
+    let type = "apple";
+
+    if (rand < 0.2) {
+        type = "poison";
+    } else if (rand < 0.35) {
+        type = "star";
+    }
+
+    let shape = new createjs.Shape();
+
+    if (type === "apple") {
+        shape.graphics.beginFill("red").drawCircle(0, 0, 16);
+        item.pts = 100;
+    } else if (type === "star") {
+        shape.graphics.beginFill("gold").drawRect(-12, -12, 24, 24);
+        shape.rotation = 45;
+        item.pts = 300;
+    } else if (type === "poison") {
+        shape.graphics.beginFill("purple").drawCircle(0, 0, 16);
+        item.pts = -200;
+    }
+
+    item.addChild(shape);
+    item.type = type;
+    item.x = Math.random() * (STAGE_W - 80) + 40;
+    item.y = -30;
+    item.speed = FALL_SPEED_BASE + Math.floor(score / 1000) * 0.5 + Math.random() * 1.5;
+
+    stage.addChild(item);
+    itemList.push(item);
+}
+
+function updateItems() {
+    for (let i = itemList.length - 1; i >= 0; i--) {
+        let item = itemList[i];
+        item.y += item.speed;
+
+        let dx = Math.abs(item.x - basket.x);
+        let dy = Math.abs(item.y - basket.y);
+
+        if (dx < BASKET_WIDTH / 2 + 10 && dy < 25) {
+            score += item.pts;
+            if (score < 0) score = 0;
+            scoreText.text = "スコア: " + score;
+
+            playSE("../../Audio/決定ボタンを押す22.mp3");
+
+            let label = item.pts > 0 ? "+" + item.pts : item.pts;
+            let color = item.pts > 0 ? "green" : "purple";
+            showEffectText(item.x, item.y, label, color);
+
+            stage.removeChild(item);
+            itemList.splice(i, 1);
+            continue;
+        }
+
+        if (item.y > STAGE_H + 30) {
+            if (item.type !== "poison") {
+                lives--;
+                updateLivesDisplay();
+
+                if (lives <= 0) {
+                    showGameOver();
+                    return;
+                }
+            }
+
+            stage.removeChild(item);
+            itemList.splice(i, 1);
+        }
+    }
+}
+
+function updateLivesDisplay() {
+    let hearts = "";
+    for (let i = 0; i < lives; i++) hearts += "❤️";
+    livesText.text = "ライフ: " + hearts;
+}
+
+function showEffectText(x, y, textStr, color) {
+    let txt = new createjs.Text(textStr, "bold 24px sans-serif", color);
+    txt.x = x - 15;
+    txt.y = y;
+    stage.addChild(txt);
+
+    createjs.Tween.get(txt)
+        .to({ y: y - 30, alpha: 0 }, 500)
+        .call(function() {
+            stage.removeChild(txt);
+        });
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li><strong>11-16行目</strong>: キー操作による移動と画面端での位置制限 (`BASKET_WIDTH / 2`) です。</li>
+    <li><strong>19-21行目</strong>: `frame_cnt % 35 === 0` (35フレームごと) に `spawnItem()` を実行。</li>
+    <li><strong>43-50行目</strong>: `Math.random()` の値でアイテムの種類（毒 20%, 金の星 15%, 赤りんご 65%）を決定します。</li>
+    <li><strong>71行目</strong>: `FALL_SPEED_BASE + Math.floor(score / 1000) * 0.5` により、スコアが上がるにつれて落下スピードが上昇する難易度調整を実装。</li>
+    <li><strong>83-87行目</strong>: 差分 `dx` と `dy` による矩形当たり判定。カゴの領域内に入ればスコア加算・SE再生・画面消去。</li>
+    <li><strong>136-140行目</strong>: `createjs.Tween.get` によるスコア上昇フェードアウト演出。</li>
+</ul>
+
+<h3>3.5 key.js & mouse.js</h3>
+<pre><code class="javascript">// key.js
+function handleKeyDown(event) {
+    if (event.keyCode === 37 || event.keyCode === 65) isPressLeft = true;
+    if (event.keyCode === 39 || event.keyCode === 68) isPressRight = true;
+    if (event.keyCode === 32) {
+        if (scene_id === 0) startGame();
+        if (scene_id === 2) initTitle();
+    }
+}
+function handleKeyUp(event) {
+    if (event.keyCode === 37 || event.keyCode === 65) isPressLeft = false;
+    if (event.keyCode === 39 || event.keyCode === 68) isPressRight = false;
+}
+
+// mouse.js
+function initMouseControl() {
+    stage.addEventListener("stagemousemove", function(evt) {
+        if (scene_id === 1 && basket) {
+            basket.x = evt.stageX;
+            if (basket.x < BASKET_WIDTH / 2) basket.x = BASKET_WIDTH / 2;
+            if (basket.x > STAGE_W - BASKET_WIDTH / 2) basket.x = STAGE_W - BASKET_WIDTH / 2;
+        }
+    });
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>`keydown` / `keyup` でフラグを操作し、滑らかなキー移動を実現。`stagemousemove` の `evt.stageX` でマウスに同期させます。</li>
+</ul>
+
+<h3>3.6 gameover.js</h3>
+<pre><code class="javascript">function showGameOver() {
+    scene_id = 2;
+
+    for (let item of itemList) {
+        stage.removeChild(item);
+    }
+    itemList = [];
+
+    let gameOverText = new createjs.Text("GAME OVER", "44px bold sans-serif", "red");
+    gameOverText.x = STAGE_W / 2 - gameOverText.getMeasuredWidth() / 2;
+    gameOverText.y = 180;
+    stage.addChild(gameOverText);
+
+    let finalScoreText = new createjs.Text("獲得スコア: " + score + " 点", "28px sans-serif", "black");
+    finalScoreText.x = STAGE_W / 2 - finalScoreText.getMeasuredWidth() / 2;
+    finalScoreText.y = 260;
+    stage.addChild(finalScoreText);
+
+    let restartText = new createjs.Text("スペースキー または クリック でタイトルに戻る", "20px sans-serif", "#555555");
+    restartText.x = STAGE_W / 2 - restartText.getMeasuredWidth() / 2;
+    restartText.y = 350;
+    stage.addChild(restartText);
+
+    setTimeout(function() {
+        stage.addEventListener("stagemousedown", initTitle);
+    }, 500);
+}</code></pre>
+<h4>行別詳細解説</h4>
+<ul>
+    <li>残存オブジェクトの消去とメモリ解放、500msの遅延後にタイトル戻りイベントを無効化・有効化して誤操作を防止します。</li>
+</ul>
+</body>
+</html>
