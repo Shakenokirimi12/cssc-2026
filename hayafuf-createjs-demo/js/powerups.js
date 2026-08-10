@@ -120,8 +120,16 @@
     }
   }
 
+  // 携帯のバイブレーション。対応していない端末(iPhone など)では何も起きない
+  function vibrate(pattern) {
+    if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} }
+  }
+
   function collect(it) {
     PP.audio.catchItem();
+    // 爆弾・ミサイルは特大、それ以外のアイテムは中くらいの振動
+    var isBig = it.kind === "power" && (it.def.id === "bomb" || it.def.id === "missile");
+    vibrate(isBig ? [140, 60, 220] : 60);
     if (it.kind === "coin") {
       // 【課題5】コインをキャッチ。枚数を増やして、ライフ回復の判定へ
       PP.game.coins++;
@@ -146,14 +154,14 @@
     var g = PP.game;
     // 難易度「深海の悪魔」(useLives: false)ではライフ回復なし(救済のない1発ゲームオーバー)
     if (PP.diff().useLives === false) return;
-    // TODO【課題5-1】コインが PP.LIFE.coinsPerLife 枚たまったら、
-    //   1) コインをその枚数ぶん減らして(g.coins から引く)、
-    //   2) ライフを1増やそう(g.lives。上限は PP.LIFE.maxLives)。
-    // ヒント: if 文で g.coins >= PP.LIFE.coinsPerLife を調べる。
-    //         ライフが上限のときは増やさない(コインを取っておくか、捨てるかは自分で決めよう)。
-    // 増やせたら、次の1行で画面に知らせると気持ちいい:
-    //   PP.fx.floatText("❤ ライフ +1!", PP.W / 2, 96, "#ff5d8f", 24);
-
+    // 【課題5-1】コインが PP.LIFE.coinsPerLife 枚たまったらライフに変える。
+    // ライフが上限(maxLives)のときは増やさず、コインは取っておく
+    // (あふれた分は次の回復にそのまま使える)。
+    if (g.coins >= PP.LIFE.coinsPerLife && g.lives < PP.LIFE.maxLives) {
+      g.coins -= PP.LIFE.coinsPerLife;
+      g.lives++;
+      PP.fx.floatText("❤ ライフ +1!", PP.W / 2, 96, "#ff5d8f", 24);
+    }
   }
 
   function activate(def) {

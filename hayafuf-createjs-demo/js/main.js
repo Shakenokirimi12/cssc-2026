@@ -175,22 +175,115 @@
       PP.hud.update();
       PP.hud.showOverlay("🏆 全海域制覇!",
         "全 " + total + " ステージを生き延びた! 秘宝は我らのものだ!\n" +
-        "制覇ボーナス +5000\n最終スコア " + g.score + " 点\nクリックで最初の海へ");
+        "制覇ボーナス +5000\n最終スコア " + g.score + " 点\n" + PP.TAP + "で最初の海へ");
       return;
     }
     g.state = "clear";
     PP.hud.update();
     PP.hud.showOverlay("⚓ ステージ " + g.level + "/" + total + " 制覇!",
-      "耐え切って残りも掃討した! 生存ボーナス +1000\nスコア " + g.score + " 点\nクリックで次のステージへ");
+      "耐え切って残りも掃討した! 生存ボーナス +1000\nスコア " + g.score + " 点\n" + PP.TAP + "で次のステージへ");
   }
 
+  // ---------- 【課題5-3】(模範解答つき)リトライの画面切り替え ----------
   // 【課題5】ライフを使った復帰: いまのステージを「最初から」やり直す。
-  // 樽ギリギリの状態から続行するのではなく、レベル・スコア・コインはそのままで
-  // チェーンだけ仕切り直しになる(main.js の TODO【課題5-2】から呼ばれる)。
+  // レベル・スコア・コインはそのままで、チェーンだけ仕切り直しになる。
+  //
+  // 最初の実装は「startLevel() を呼ぶだけ」だった。それだと樽が溢れた次の
+  // フレームには新しい盤面が出ていて、切り替わりが急すぎる。プレイヤーは
+  // 「何が起きた? ライフは減った?」を確認する間がない。
+  // そこで、切り替えを3拍子に分ける:
+  //   拍1: その場で時が止まる(衝撃 + 静止。ミスした盤面を一瞬見せる)
+  //   拍2: 暗転して「❤ 残りライフ」を確認させる
+  //   拍3: 暗転の裏で盤面を組み直し、明転して再開
+  // 各拍の長さは config.js の PP.RETRY で調整できる(TODO【課題5-3】)。
+  //
+  // 進行は「dt で減っていくタイマー + 状態(state)」の小さな仕組み。
+  // state を "retrying" にすると、tick のプレイ処理(玉の移動・タイマー・危機)が
+  // まるごと素通りになるので、拍1の間は盤面がその場で固まって見える。
+  // これは課題5-2 の if/else と同じ「state で分岐する」考え方の応用。
+  var retryFx = null;      // 暗転の幕とライフ表示(切り替え中だけ存在する)
+  var retryPhase = "";     // "freeze"(拍1) → "veil"(拍2)
+  var retryT = 0;          // いまの拍の残り秒
+
+  // 拍1: 樽が溢れた衝撃。時を止めて、揺れと重い音でミスを体に伝える
   function retryLevel() {
-    startLevel();   // 同じレベルを組み直す(g.level は変えない)
-    PP.fx.floatText("❤ ライフを使ってステージ最初から再挑戦!", PP.W / 2, 96, "#ff5d8f", 24);
+    var g = PP.game;
+    g.state = "retrying";
+    PP.crisis.stop();          // 警報と赤い帳を畳む(直後の静けさも「間」のうち)
+    PP.audio.setDanger(false);
+    PP.audio.swallowed(1);     // 腹に来る重い衝撃音
+    PP.fx.shake(48, 0.6);
+    PP.fx.screenFlash("rgba(255,40,40,0.4)", 0.4, 380);   // 赤の明滅で「まずい」を体に伝える
+    // 飛んでいた玉は宙で消える(gameOver と同じ後始末)
+    g.shots.forEach(function (s) { PP.layers.shot.removeChild(s.view); });
+    g.shots = [];
+    PP.hud.update();   // 右上の ❤ をこの時点で減らす(暗転の文字と食い違わないように)
+    buildRetryVeil();
+    retryPhase = "freeze";
+    retryT = PP.RETRY.freeze;
+  }
+
+  // 暗転の幕と「❤ 残りライフ」の1行を用意する。最初は透明で、拍2で現れる
+  function buildRetryVeil() {
+    removeRetryVeil();
+    var c = new createjs.Container();
+    c.mouseEnabled = false;
+    var veil = new createjs.Shape();
+    // 画面が揺れている最中でも端がのぞかないように、一回り大きく塗る
+    veil.graphics.beginFill("#0c0a08").drawRect(-140, -140, PP.W + 280, PP.H + 280);
+    veil.alpha = 0;
+    c.addChild(veil);
+    var t = new createjs.Text(
+      "❤ 残りライフ " + PP.game.lives + " ― 同じ海域の最初から",
+      '800 24px "Cinzel","Hiragino Kaku Gothic ProN","Meiryo",serif', "#f0d9c8");
+    t.textAlign = "center"; t.textBaseline = "middle";
+    t.x = PP.W / 2; t.y = PP.H / 2;
+    t.shadow = new createjs.Shadow("rgba(0,0,0,0.9)", 0, 3, 8);
+    t.alpha = 0;
+    c.addChild(t);
+    PP.stage.addChild(c);   // どのレイヤーよりも手前(HUDの上)に置く
+    retryFx = { cont: c, veil: veil, text: t };
+  }
+
+  // 拍2: 暗転。残りライフを確認する「間」を作る
+  function showRetryVeil() {
+    if (!retryFx) return;
+    createjs.Tween.get(retryFx.veil).to({ alpha: PP.RETRY.veil }, 320);
+    createjs.Tween.get(retryFx.text).wait(180).to({ alpha: 1 }, 240);
+  }
+
+  // 拍3: 暗転の裏で盤面を組み直してから明転する。
+  // 組み直し(startLevel)を幕が開く前にやるのがポイント
+  // (幕が透明なうちに組み直すと、玉が一瞬で消し替わるところが丸見えになる)
+  function finishRetry() {
+    startLevel();       // state はこの中で "playing" に戻る
     PP.hud.update();
+    var f = retryFx;
+    retryFx = null;
+    if (f) {
+      createjs.Tween.get(f.cont)
+        .to({ alpha: 0 }, PP.RETRY.fade * 1000)
+        .call(function () { PP.stage.removeChild(f.cont); });
+    }
+    PP.fx.floatText("❤ ライフを使って再挑戦!", PP.W / 2, 96, "#ff5d8f", 24);
+  }
+
+  // 切り替えの進行役。tick から state === "retrying" の間だけ呼ばれ、
+  // タイマー(retryT)が切れるたびに次の拍へ進む
+  function updateRetry(dt) {
+    retryT -= dt;
+    if (retryT > 0) return;
+    if (retryPhase === "freeze") {
+      retryPhase = "veil";
+      retryT = PP.RETRY.veilTime;
+      showRetryVeil();
+    } else {
+      finishRetry();
+    }
+  }
+
+  function removeRetryVeil() {
+    if (retryFx) { PP.stage.removeChild(retryFx.cont); retryFx = null; }
   }
 
   // 樽が溢れた。ここから先は gameover.js の演出に進行を預ける
@@ -215,7 +308,7 @@
     var g = PP.game;
     g.state = "over";
     PP.hud.showOverlay("☠ ゲームオーバー",
-      "船は宝もろとも呑まれた…\n最終スコア " + g.score + " 点 (ステージ " + g.level + ")\nクリックでリスタート",
+      "船は宝もろとも呑まれた…\n最終スコア " + g.score + " 点 (ステージ " + g.level + ")\n" + PP.TAP + "でリスタート",
       "doom");
   }
 
@@ -228,9 +321,24 @@
       return;
     }
     var dt = Math.min(e.delta / 1000, 0.05);
+    // TODO【課題6】倍速モード: ゲームの時間の流れを変えてみよう。
+    // dt は「このフレームで進んだ時間(秒)」。玉の移動もタイマーも危機演出も、
+    // ゲームの中の動きはぜんぶ dt を使って進む。だから、この場所で dt に倍率
+    // (config.js の PP.game.timeScale)を掛けると、ゲーム全体がまとめて
+    // 速くなったり遅くなったりする。ここに掛け算を1行書いてみよう。
+    //   ヒント: dt = dt * 倍率;  は  dt *= 倍率;  とも書ける
     var g = PP.game;
 
     if (g.state === "playing") {
+      // 携帯の ◀▶ ボタン: 短押しは低速で微調整、押し続けると加速して横断も速い
+      if (touchMoveDir) {
+        touchMoveHeld += dt;
+        var mv = TOUCH_MOVE_V0 + (TOUCH_MOVE_V1 - TOUCH_MOVE_V0) *
+                 Math.min(1, touchMoveHeld / TOUCH_MOVE_RAMP);
+        PP.cannon.setX(PP.cannon.x + touchMoveDir * mv * dt);
+      } else {
+        touchMoveHeld = 0;
+      }
       if (g.comboTimer > 0) {
         g.comboTimer -= dt;
         if (g.comboTimer <= 0) { g.combo = 0; PP.hud.update(); }
@@ -250,14 +358,21 @@
         }
       });
       if (deadLane) {
-        // TODO【課題5-2】ライフ制にしよう。今は樽が溢れると即ゲームオーバー。
-        // ライフ(g.lives)が残っていたら、ゲームオーバーの代わりに
-        //   1) g.lives を1減らして、
-        //   2) retryLevel() を呼ぼう(このステージの「最初から」やり直せる。
-        //      スコアとコインはそのまま残る)。
-        // ヒント: if / else を使う。ライフが無い(g.lives <= 0)ときだけ gameOver() を呼ぶ。
-        // (コインでライフを増やす処理は powerups.js の TODO【課題5-1】)
-        gameOver();
+        // 【課題5-2】(模範解答つき) ライフが残っていればゲームオーバーの代わりに、
+        // ライフを1つ使ってこのステージの最初からやり直す(スコアとコインは残る)。
+        // 難易度「深海の悪魔」(useLives: false)は救済のない1発ゲームオーバー。
+        // この if/else は完成品として入れてある。読み解いたら、次の問いを
+        // 「予想 → 実際に書き換えて試す → 元に戻す」で確かめよう(答えはガイド 5-3):
+        //   Q1. && の左右(useLives の条件と g.lives > 0)を入れ替えても同じ動き?
+        //   Q2. g.lives > 0 を g.lives >= 0 にすると、何が壊れる?
+        //   Q3. g.lives-- を retryLevel() の「後」に動かすと、画面のどこがおかしくなる?
+        // (コインでライフを増やす処理は powerups.js の【課題5-1】= あちらは自分で書く)
+        if (PP.diff().useLives !== false && g.lives > 0) {
+          g.lives--;
+          retryLevel();
+        } else {
+          gameOver();
+        }
       }
 
       // 生存ゲージ(ロールアウト完了後から減る)。空になったら掃討フェーズへ。
@@ -277,6 +392,8 @@
         PP.crisis.update(dt);
         PP.cannon.syncColors();
       }
+    } else if (g.state === "retrying") {
+      updateRetry(dt);   // リトライの画面切り替え(【課題5-3】)。終わると playing に戻る
     } else if (g.state === "draining" || g.state === "over") {
       PP.gameover.update(dt);
     }
@@ -409,6 +526,40 @@
   PP.retryLevel = retryLevel;
 
   // ---------- 入力 ----------
+  // タッチ操作は画面の仮想ボタン(index.html の #touchUI)に一本化:
+  //   ◀ ▶ ボタン(押しっぱなし) … 大砲の移動(押し続けると加速)
+  //   FIRE ボタン               … 発射(長押しで連射)
+  //   ⇄ ボタン / 大砲をタップ  … 玉の交換
+  // 盤面を指で触っても大砲は動かない(誤操作防止。ボタンだけで遊ぶ)。
+  // マウスは従来どおり「動かして照準、クリックした瞬間に発射」。
+  var touchAiming = false;   // タッチで盤面に触れている最中か(大砲タップ交換の判定用)
+  var touchDownX = 0, touchDownT = 0, touchOnCannon = false;
+  var touchMoveDir = 0;               // ◀▶ ボタンで押されている方向(-1/0/+1)
+  var TOUCH_MOVE_V0 = 600;            // ◀▶ 押し始めの速さ px/s(微調整用)
+  var TOUCH_MOVE_V1 = 1800;           // ◀▶ 押し続けたときの最高速 px/s
+  var TOUCH_MOVE_RAMP = 0.45;         // 最高速に達するまでの秒数
+  var touchMoveHeld = 0;              // ◀▶ を押し続けている秒数
+  function isTouchEv(e) {
+    var n = e && e.nativeEvent;
+    return !!(n && n.type && n.type.indexOf("touch") === 0);
+  }
+
+  // 【課題6】倍速モードの切り替え。画面の速度ボタン(⏸の左)と S キーから
+  // 呼ばれる。ボタンの表示(×1/×2/×0.5)は hud.js が PP.game.timeScale を見て
+  // 自動で描き替えるので、この関数では値を変えるだけでよい。
+  function cycleTimeScale() {
+    var g = PP.game;
+    // TODO【課題6】押すたびに 通常 → 2倍速 → 0.5倍速 → 通常 → … と一巡させよう。
+    // 今の g.timeScale の値を調べて、次の値を g.timeScale に代入する。
+    //   1) 今が通常速度(1.0)のとき  → 2倍速にする。どんな値を入れる?
+    //   2) 今が2倍速のとき          → 0.5倍速にする。どんな値を入れる?
+    //   3) それ以外(0.5倍速)のとき → 通常速度に戻す
+    // ヒント: if / else if / else で書ける(「今の値と等しいか」は === で調べる)
+
+    PP.fx.floatText("時間の流れ ×" + g.timeScale, PP.W / 2, 88, "#8ef0d0", 22);
+    PP.hud.setTimeScale();   // タイトル画面の選択ボタンのハイライトも追従させる
+  }
+
   function onStageDown(e) {
     if (PP.editor && PP.editor.active) return;
     if (e.nativeEvent && e.nativeEvent.button === 2) return;   // 右ボタンは交換専用
@@ -429,6 +580,15 @@
       PP.hud.setDifficulty(diffHit);
       return;
     }
+    // 時間の流れボタン(【課題6】難易度ボタンの下の段)。出航前に倍率を選べる。
+    // ボタンに当たったら倍率を変えるだけで、ゲームは始めない(難易度と同じ)。
+    // ※ 選んだ値が実際に効くのは、tick の【課題6】(dt への掛け算)を書いてから
+    var spdHit = PP.hud.hitSpeedSelect(e.stageX, e.stageY);
+    if (spdHit !== null) {
+      g.timeScale = spdHit;
+      PP.hud.setTimeScale();
+      return;
+    }
     if (g.state === "title") {
       PP.hud.hideOverlay();
       startLevel();
@@ -438,13 +598,31 @@
         PP.pauseCtl.pause("manual");
         return;
       }
+      // 速度ボタン(【課題6】⏸の左)へのクリックは発射ではなく倍速切り替え
+      if (PP.hud.hitSpeedBtn(e.stageX, e.stageY)) {
+        cycleTimeScale();
+        return;
+      }
+      // ⇄ 交換ボタン(タッチ端末用。右クリック/Space の代わり)は発射ではなく交換
+      if (PP.hud.hitSwapBtn(e.stageX, e.stageY)) {
+        PP.cannon.swap();
+        return;
+      }
       // 特殊弾ストックスロットへのクリックは発射ではなく交換
       if (PP.cannon.hitStock(e.stageX, e.stageY)) {
         PP.cannon.toggleSpecial();
         return;
       }
-      PP.cannon.setX(e.stageX);
-      PP.cannon.fire();
+      if (isTouchEv(e)) {
+        // タッチで盤面を触っても大砲は動かさない(操作は ◀▶/FIRE/⇄ ボタン)。
+        // 「大砲を動かさず短くタップ」だけは玉交換の合図として拾う(stagemouseup 側)
+        touchAiming = true;
+        touchDownX = e.stageX; touchDownT = Date.now();
+        touchOnCannon = Math.abs(e.stageX - PP.cannon.x) < 80 && e.stageY > PP.cannon.y - 90;
+      } else {
+        PP.cannon.setX(e.stageX);
+        PP.cannon.fire();
+      }
     } else if (g.state === "clear") {
       g.level++;
       PP.hud.hideOverlay();
@@ -470,6 +648,10 @@
   // ---------- 初期化 ----------
   function init() {
     stage = PP.stage = new createjs.Stage("gameCanvas");
+    // スマホ/タブレット対応: タッチを CreateJS のマウスイベントに変換する。
+    // これでタップが stagemousedown、指のドラッグが stagemousemove として届く
+    // (タップ = その位置へ照準して発射。既存の onStageDown がそのまま使える)。
+    if (createjs.Touch.isSupported()) createjs.Touch.enable(stage);  // シングルタッチで十分
 
     // 玉は立体交差・トンネルのために層を分ける:
     //   bridgeUnder(橋の落ち影・アーチ・橋脚)→ ballUnder(橋の下/道の玉)
@@ -537,13 +719,96 @@
       function () {
         PP.game.state = "title";
         PP.hud.showOverlay("🏴‍☠️ Are you ready?",
-          "クリックで出航!\nマウスで大砲を移動、クリックで発射\n右クリック / Space で玉を交換、M で消音\n特殊弾は左下のスロットをクリックで交換");
+          PP.TOUCH
+            ? "タップで出航!\n◀ ▶ ボタンで大砲を移動(押し続けると加速)\nFIRE ボタンで発射(長押しで連射)、⇄ ボタンで玉を交換\n特殊弾は左下のスロットをタップで交換"
+            : "クリックで出航!\nマウスで大砲を移動、クリックで発射\n右クリック / Space で玉を交換、M で消音\n特殊弾は左下のスロットをクリックで交換");
       }
     );
 
     stage.on("stagemousedown", onStageDown);
+    // 盤面のタッチは離しても発射しない(発射は FIRE ボタン)。
+    // 大砲の上で「動かさず短く」タップしたときだけ、玉の交換
+    stage.on("stagemouseup", function (e) {
+      if (!touchAiming) return;
+      touchAiming = false;
+      if (PP.game.state !== "playing") return;
+      if (PP.pauseCtl && PP.pauseCtl.active) return;
+      var moved = Math.abs(e.stageX - touchDownX) > 24;
+      var quick = Date.now() - touchDownT < 350;
+      if (touchOnCannon && !moved && quick) PP.cannon.swap();
+    });
+    // 音の解錠の保険: ブラウザの自動再生制限は「ユーザー操作の中」でしか
+    // 解けない。タッチ変換が効かない環境でも最初の1タップで確実に解く
+    document.addEventListener("pointerdown", function () { PP.audio.unlock(); }, { once: true });
+
+    // ---- 携帯用の操作ボタン(index.html の #touchUI)の配線 ----
+    // 表示/非表示は CSS(pointer: coarse)が決めるので、ここでは配線だけ行う
+    (function wireTouchButtons() {
+      function canPlay() {
+        return PP.game.state === "playing" && !(PP.pauseCtl && PP.pauseCtl.active);
+      }
+      // 押しっぱなしで効く移動ボタン。指が滑って外れても止まるように
+      // pointercancel / lostpointercapture でも解除する
+      function bindHold(id, dir) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("pointerdown", function (ev) {
+          ev.preventDefault();
+          PP.audio.unlock();
+          if (el.setPointerCapture) { try { el.setPointerCapture(ev.pointerId); } catch (e2) {} }
+          touchMoveDir = dir;
+        });
+        function stop() { if (touchMoveDir === dir) touchMoveDir = 0; }
+        el.addEventListener("pointerup", stop);
+        el.addEventListener("pointercancel", stop);
+        el.addEventListener("lostpointercapture", stop);
+        el.addEventListener("contextmenu", function (ev) { ev.preventDefault(); });
+      }
+      // 押した瞬間に1回だけ効くボタン。ポーズ中は「再開」として働く
+      function bindTap(id, action) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("pointerdown", function (ev) {
+          ev.preventDefault();
+          PP.audio.unlock();
+          if (PP.pauseCtl && PP.pauseCtl.active) { PP.pauseCtl.resume(); return; }
+          if (canPlay()) action();
+        });
+        el.addEventListener("contextmenu", function (ev) { ev.preventDefault(); });
+      }
+      // FIRE は押した瞬間に1発 + 押しっぱなしで連射。指が滑って外れても止まる
+      function bindFire(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var timer = null;
+        function stop() { if (timer) { clearInterval(timer); timer = null; } }
+        el.addEventListener("pointerdown", function (ev) {
+          ev.preventDefault();
+          PP.audio.unlock();
+          if (PP.pauseCtl && PP.pauseCtl.active) { PP.pauseCtl.resume(); return; }
+          if (!canPlay()) return;
+          PP.cannon.fire();
+          if (el.setPointerCapture) { try { el.setPointerCapture(ev.pointerId); } catch (e2) {} }
+          stop();
+          timer = setInterval(function () {
+            if (!canPlay()) { stop(); return; }
+            PP.cannon.fire();
+          }, 180);
+        });
+        el.addEventListener("pointerup", stop);
+        el.addEventListener("pointercancel", stop);
+        el.addEventListener("lostpointercapture", stop);
+        el.addEventListener("contextmenu", function (ev) { ev.preventDefault(); });
+      }
+      bindHold("tLeft", -1);
+      bindHold("tRight", 1);
+      bindFire("tFire");
+      bindTap("tSwap", function () { PP.cannon.swap(); });
+    })();
+
     stage.on("stagemousemove", function (e) {
       if (PP.pauseCtl && PP.pauseCtl.active) return;   // ポーズ中は大砲も動かさない
+      if (isTouchEv(e)) return;   // タッチでは大砲を動かさない(◀▶ ボタンで移動)
       PP.cannon.setX(e.stageX);
     });
     // 右クリックで玉を交換(メニューは出さない)
@@ -569,6 +834,9 @@
       } else if (e.code === "KeyM") {
         PP.fx.floatText(PP.audio.toggleMute() ? "🔇 消音" : "🔊 音あり",
           PP.W / 2, 88, "#f0e6c8", 22);
+      } else if (e.code === "KeyS") {
+        // 【課題6】S キーでも倍速モードを切り替えられる(画面のボタンと同じ)
+        cycleTimeScale();
       } else if (/^Digit[1-4]$/.test(e.code)) {
         // 1〜4 キーでも難易度(【課題1】)を選べる。難易度ボタンが出ている画面
         // (タイトル/ゲームオーバー/全制覇後)だけ有効。ステージの合間は変えられない
