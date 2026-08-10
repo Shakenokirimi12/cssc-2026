@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ブロック崩しゲーム</title>
+  <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+
+  <script src="global.js"></script>
+  <script src="student.js"></script>
+  <script src="key.js"></script>
+  <script src="init.js"></script>
+  <script src="tick.js"></script>
+</head>
+<body style="background-color: #222; text-align: center; color: white;">
+  <h1>★ ブロック崩し ★</h1>
+  <canvas id="myCanvas" width="600" height="600"></canvas>
+  
+  <p>スペースでスタート！</p>
+  <p>操作方法：キーボードの [←] [→] でバー移動</p>
+  <p>         タイトルで数字キーでステージ変更</p>
+  <p>         Mキーでミュート切り替え</p>
+  <button id="muteButton" type="button" onclick="toggleMute()" style="margin-bottom: 10px; padding: 6px 12px;">🔊 音オン</button>
+</body>
+</html>
